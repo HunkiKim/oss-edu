@@ -41,10 +41,10 @@ NAME     COMPLETIONS   DURATION   AGE
 my-job   1/1           22s        27s
 ```
 
-- 추가적으로 **completions** 속성과 **parallelism** 속성이 있다.
-    - **completions** 속성은 순차적으로 Job 리소스를 생성한다.
-    - **parallelism** 속성은 병렬적으로 같이 Job 생성된다.
-        - Job 실행중 **parallelism 속성을 변경**할 수 있다.
+- 추가적으로 **completions** 필드과 **parallelism** 필드이 있다.
+    - **completions** 필드은 순차적으로 Job 리소스를 생성한다.
+    - **parallelism** 필드은 병렬적으로 같이 Job 생성된다.
+        - Job 실행중 **parallelism 필드을 변경**할 수 있다.
     
     - 만약 둘 다 같이 정의되어 있다면 parallelism의 값만큼 completions의 값의 job을 병렬적으로 실행한다.
       - 예를들면 completions가 5이고, parallelism이 2라면 2개의 인스턴스가 병렬적으로 실행되며 5번 실행될 때 까지 잡을 실행시킵니다.
@@ -75,7 +75,7 @@ spec:
   completions: 15
   parallelism: 2
 ```
-- 아래는 completions 속성과 parallelism 속성의 예시이다.
+- 아래는 completions 필드과 parallelism 의 예시이다.
 ```json
 apiVersion: batch/v1
 kind: Job
@@ -116,7 +116,7 @@ my-job-8b5fd                        0/1     Completed           0          11s
 my-job-6vb2k                        0/1     Completed           0          11s
 my-job-5vmp6                        0/1     ContainerCreating   0          1s
 ```
-- **activeDeadlineSeconds** 속성을 통해 파드가 일정시간 실행되면, 잡을 실패하는 것으로 간주하게 할 수 있다.
+- **activeDeadlineSeconds** 필드를 통해 파드가 일정시간 실행되면, 잡을 실패하는 것으로 간주하게 할 수 있다.
   - 실제로 아래의 결과를 확인해보면 잡이 실행되지만, 일정시간 이후에 pod가 종료되며, job이 실패한것으로 나타난다.
 ```yaml
 apiVersion: batch/v1
@@ -191,7 +191,7 @@ hello-28072846   1/1           3s         24s
 ```
 - 위처럼 schedule에 **cron expression**을 통해 작성 가능하며 실행할 jobTemplate를 작성한다.
 - spec의 컨테이너는 여러 개 정의 가능
-- **startingDeadlineSeconds** 속성이 있다.
+- **startingDeadlineSeconds** 필드 있다.
     - ?초안에 시작안하면 실패한다는 표시로 간주한다.
     - 실패한 Cronjob은 이후에 다시 스케줄되지 않습니다.
     - 테스트를 할 수 있는 방법은 따로 없습니다.
