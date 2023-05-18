@@ -4,13 +4,369 @@
 
 ## 컨테이너 재시작
 - 컨테이너가 종료되었을 때 어떻게 처리할지 처리를 결정하는 정책입니다.
+- 파드의 spec에 restartPolicy 필드가 있다.
+- restartPolicy는 Pod의 모든 컨테이너에 적용된다.
 - 3가지 정책이 있습니다.
   - Always: 컨테이너가 종료되면 항상 재시작
   - OnFailure: 컨테이너가 실패한 경우에만 재시작
   - Never: 컨테이너 종료시 재시작 X
+- 기본값은 Alawys입니다.
+
 ## imagePullPolicy
-- 파드가 생성되고, 컨테이너를 생성할 때 이미지를 PULL할때의 정책을 정하는 속성이다.
-- 만약 따로 설정하지 않는다면 
+- kubelet이 이미지를 pull 할 때 사용되는 속성이다.
+- 3가지 종류가 있다.
+  - IfNotPresent : 해당 이미지가 로컬에 없는 경우만 pull 작업을 한다.
+  - Always : 매번 pull 작업을 합니다.
+  - Never : 이미지를 pull하지 않으며, 로컬에 없으면 작업에 실패하게된다.
+- 만약 따로 설정하지 않는다면 조건에 따라 기본값이 달라진다.
+- 프로덕션 환경에선 :latest는 지양해야한다.
+  - 이미지의 어떤 버전이 기동되고 있는지 추적이 어렵고, 롤백도 어렵다.
+- 기본적으로 default도 3가지가 있다.
+    - 컨테이너 이미지의 태그가 :latest이며, imagePullPolicy를 설정하지 않았다면 imagePullPolicy는 자동으로 Always로 설정된다.
+    - 이미지 태그 명시하지 않고, imagePullPolicy를 설정하지 않았다면 자동으로 Always로 된다.
+    - 태그가 latest가 아닌 태그가 있고, imagePullPolicy를 설정하지 않았다면 자동으로 IfNotPresent로 설정된다.
+- 이미지가 없고 Never인 경우 실행 결과
+```
+$ k get pods
+NAME     READY   STATUS              RESTARTS   AGE
+my-pod   0/1     ErrImageNeverPull   0          2s
+```
+- 이미지가 없고 Always인 경우 실행 결과
+```
+$ k get pods
+NAME     READY   STATUS             RESTARTS   AGE
+my-pod   0/1     ImagePullBackOff   0          21s
+```
+
+## Affinity(관계성)
+- nodeSelector는 파드를 특정 레이블이 있는 노드로 제한하는 가장 간단한 방법이다.
+- Affinity와 Anti-Affinity 기능은 표현할 수 있는 제약 종류를 크게 확장한다.
+- Pod와 Node간의 관계를 정의하는 기능입니다. 쉽게말하면 특정 노드에 파드를 스케줄링 하려면 Node Affinity, 특정 파드가 다른 파드와 같은 노드에 스케줄링 되도록 할 땐 Pod Affinity를 사용합니다.
+- Affinity는 Pod의 sec 섹션에 설정됩니다.
+### Node Affinity
+- 노드와 관련된 Affinity를 설정합니다. 노드의 Label과 매치되는 조건을 지정해 파드를 특정 노드에 바인딩 할 수 있습니다.
+- Node Affinity는 다음과 같은 세 가지 옵션을 제공합니다.
+  - requiredDuringSchedulingIgnoredDuringExecution : 파드가 특정 노드와 매치되어아먄 스케줄링 됩니다. nodeSelector와 유사하지만, 좀 더 표현적인 문법을 제공합니다.
+  - preferredDuringSchedulingIgnoredDuringExecution : 파드가 특정 노드와 가장 잘 매치되는 경우 스케줄링 됩니다. 해당 노드가 없어도, 스케줄러는 여전히 파드를 스케줄링합니다.
+  - requiredDuringScheduingRequiredDuringExecution : 파드가 특정 노드와 매치되어야 스케줄링되고 실행 중인 동안에도 계속해서 해당 노드에 유지됩니다.
+- Pod는 nodeSelectorTerms에 해당하는 노드에 스케줄링됩니다.
+  - matchExpression : 매치 표현식을 사용하여 노드 레이블과 일치시킬 조건을 정의합니다. 노드는 하나 이상의 매치 표현식을 충족해야 합니다.
+    - key : 매치 표현식의 키로 노드 레이블 키를 지정
+    - operator : 매치 표현식에 사용할 연산자를 지정
+      - 주로 In, NotIn, Exists, DoesNotExist, Gt, Lt 등이 사용됩니다.
+      - NotIn과 DeosNotExist 연산자를 사용하면 노드 안티-어피니티 규칙을 정의한다고도 부른다.
+    - values: 매치 표현식과 일치해야 하는 노드 레이블 값의 목록을 지정합니다.
+  - matchFields : 매치 필드를 사용하여 노드의 필드와 일치시킬 조건을 정의합니다. 노드는 하나 이상의 매치 필드를 충족해야 합니다.
+    - key: 매치 필드의 키로 노드의 필드를 지정합니다. 예를 들어 metadata.name, spec.providerID 등이 사용될 수 있습니다.
+    - operator: 매치 필드에 사용할 연산자를 지정합니다. 
+      - 주로 Equals, NotEquals, In, NotIn, Exists, DoesNotExist 등이 사용됩니다.
+    - values: 매치 필드와 일치해야 하는 값의 목록을 지정합니다.
+- weight는 노드 어피니티 가중치라고도 부르며 preferredDuringSchedulingIgnoredExecution 어피니티 타입 인스턴스에 대해 1-100 범위의 weight를 명시합니다.
+  - 스케줄러가 다른 모든 파드 스케줄링 요구 사항을 만족하는 노드를 찾으면, 만족한 모든 선호 규칙에 대해 합계 계산을 위한 weight 값을 각각 추가합니다.
+  - 스케줄러가 파드에 대한 스케줄링을 판단 할 때, 총 점수가 가장 높은 노드가 우선순위를 갖게됩니다.
+> IgnoredDuringExecution는 쿠버네티스가 파드를 스케줄링한 뒤에 노드 레이블이 변경되어도 파드는 계속 해당 노드에서 실행됨을 의미한다.
+
+### 실습
+```json
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-affinity-anti-affinity
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: label-1
+            operator: In
+            values:
+            - key-1
+      - weight: 50
+        preference:
+          matchExpressions:
+          - key: label-2
+            operator: In
+            values:
+            - key-2
+  containers:
+  - name: with-node-affinity
+    image: registry.k8s.io/pause:2.0
+```
+- label-1:key-1은 agent0에 label-2:key-2는 agent1에 설정했다.
+```
+$ k describe pod with-affinity-anti-affinity
+Name:             with-affinity-anti-affinity
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             k3d-k3s-default-agent-1/172.20.0.4
+```
+```
+$ k describe pod with-affinity-anti-affinity2
+Name:             with-affinity-anti-affinity2
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             k3d-k3s-default-agent-1/172.20.0.4
+```
+- 위의 템플릿 두 개의 pod를 설정하여 파드를 생성하면 위와 같은 결과가 나오며, weight가 더 큰 쪽으로 pod가 할당된다.
+
+- Node Anti Affinity
+  - NotIn이나 DoesNotExist를 통해 파드가 해당 노드에 할당되지 않게 할 때 사용한다.
+  - 현재 두 파드 모두 agent1로 설정이 되었는데 약간의 설정 변경으로 다시 파드를 생성하면 아래와 같은 yaml파일이 나온다.
+- weight가 아무리 높아도, requiredDuringSchedulingIgnoredDuringExecution을 충족시키지 못하면 해당 노드에 스케줄링 될 수 없다.
+```json
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-affinity-anti-affinity
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: NotIn
+            values:
+            - linux
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: label-1
+            operator: In
+            values:
+            - key-1
+      - weight: 50
+        preference:
+          matchExpressions:
+          - key: label-2
+            operator: In
+            values:
+            - key-2
+  containers:
+  - name: with-node-affinity
+    image: registry.k8s.io/pause:2.0
+```
+```shell
+k get pods -o wide --show-labels
+NAME                          READY   STATUS    RESTARTS   AGE   IP       NODE     NOMINATED NODE   READINESS GATES   LABELS
+with-affinity-anti-affinity   0/1     Pending   0          8s    <none>   <none>   <none>           <none>            <none>
+```
+### Pod Affinity
+- 파드 간의 Affinity를 설정합니다.
+- 파드의 Label과 매치되는 조건을 지정하여 파드를 특정 파드와 같은 노드 또는 다른 노드에 스케줄링할 수 있습니다.
+- Pod Affinity 다음과 같은 옵션을 제공합니다.
+  - requiredDuringSchedulingIgnoredDuringExecution : 파드가 특정 파드와 매치되어야만 스케줄링됩니다.
+  - preferredDuringSchedulingIgnoredDuringExecution : 파드가 특정 파드와 가장 잘 매치되는 경우 스케줄링됩니다.
+
+### 실습
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-pod-affinity
+spec:
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: label-1
+            operator: In
+            values:
+            - key-1
+          - key: label-2
+            operator: In
+            values:
+              - key-2
+        topologyKey: topology.kubernetes.io/zone
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 50
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: label-2
+              operator: In
+              values:
+              - key-2
+          topologyKey: topology.kubernetes.io/zone
+      - weight: 1
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: label-1
+              operator: In
+              values:
+              - key-1
+          topologyKey: topology.kubernetes.io/zone
+  containers:
+  - name: with-pod-affinity
+    image: registry.k8s.io/pause:2.0
+
+```
+- 위의 문서를 있는 그대로 해석해보면 파드가 label-1=key-1 인 레이블이 있는 파드의 노드를 선택하고, 그곳에 해당하는 topologyKey가 있는 zone을 선택해서 Pod를 스케줄링 한다.
+- topologyKey 같은 경우엔, topology를 사용하는 이유에 대해 알면 좋은데, 기본적으로 각 존마다 균일하게 스케줄되도록 하며, 클러스터에 문제가 생길경우 스스로 치유하도록 설정하기 위해 존재한다.
+  - 즉 topologyKey의 키와 동일한 값을 가진 레이블이 있는 노드는 동일한 토폴로지에 있는 것으로 간주한다.
+  - 여기선 topologyKey에 기반하여 스케줄링 또는 분산 배치를 수행하는데 사용된다.
+  - topology.kubernetes.io/zone는 클라우드 환경에서 노드가 속한 물리적인 존 또는 리전을 나타냅니다.
+    - 즉 이 물리적인 존 또는 리전을 기반으로 분산 배치를 해준다는 의미입니다.
+- podAntiAffinity같은 경우엔 label-2=key-2가 있는 레이블에 대해 가중치 50을 label-1=key-1은 1을 부여합니다.
+- 다른점이 있다면 노드 어피니티는 노드의 레이블을 기반으로, 파드 어피니티는 노드에 속한 파드를 기반으로 선택됩니다.
+- Anti가 붙어있으면 weight의 역순을 우선적으로 고른다.
+```shell
+$ k get pods -o wide --show-labels
+NAME                READY   STATUS             RESTARTS     AGE    IP          NODE                      NOMINATED NODE   READINESS GATES   LABELS
+pod-affinity        1/1     Running            0            2m2s   10.42.1.4   k3d-k3s-default-agent-3   <none>           <none>            label-1=key-1
+pod-affinity2       1/1     Running            0            118s   10.42.4.4   k3d-k3s-default-agent-0   <none>           <none>            label-1=key-1,label-2=key-2
+with-pod-affinity   0/1     CrashLoopBackOff   1 (6s ago)   9s     10.42.0.4   k3d-k3s-default-agent-1   <none>           <none>            <none>
+```
+- 0번 노드는 현재 weight 51, 3번 노드는 weight는 50이다.
+- 처음엔 가장 weight가 낮은 1번 노드를 고른다. 다시 삭제하고 실행하면 아래와 같이 나온다.
+```
+$ k get pods -o wide --show-labels
+NAME                READY   STATUS              RESTARTS   AGE     IP          NODE                      NOMINATED NODE   READINESS GATES   LABELS
+pod-affinity        1/1     Running             0          2m26s   10.42.1.4   k3d-k3s-default-agent-3   <none>           <none>            label-1=key-1
+pod-affinity2       1/1     Running             0          2m22s   10.42.4.4   k3d-k3s-default-agent-0   <none>           <none>            label-1=key-1,label-2=key-2
+with-pod-affinity   0/1     ContainerCreating   0          2s      <none>      k3d-k3s-default-agent-2   <none>           <none>            <none>
+```
+- 이번엔 2번 노드를 고른다. 같은 우선순위인 1,2번 노드에 대해서 랜덤으로 파드가 생성되는 것을 볼 수 있다.
+
+# 테인트(Taints)와 톨러레이션(Tolerations)
+- 노드 어피니티는 특정노드에 배치하거나, 배치하고싶지 않을 때 사용했다.
+  - required나 prefered를 통해
+  - 노드에 파드를 끌어들이는 속성
+- 반면 테인트는 특정 노드에 파드의 스케줄링을 제한하기 위해 사용
+  - 노드가 파드셋을 제외시킨다.
+- 톨러레이션은 파드에 적용된다.
+  - 톨러레이션을 통해 스케줄러는 그와 일치하는 테인트가 있는 파드를 스케줄할 수 있다.
+- 테인트와 톨러레이션은 함께 작동하여 파드가 부적절한 노드에 스케줄되지 않게 한다.
+
+## 테인트
+- 라벨과 효과(Effect)로 구성
+- 노드에 조건을 설정하여 파드의 배치를 제한하는 역할을 한다.
+- 일반적으로 NoSchedule, PreferNoSchedule 효과를 가지는 테인트를 사용
+  - NoSchedule: 파드가 해당 테인트와 일치하는 노드에 배치되지 않도록 합니다. 즉, 파드가 해당 노드에 스케줄링되지 않습니다.
+  - PreferNoSchedule: 파드가 해당 테인트와 일치하는 노드에 배치되지 않는 것을 선호하지만, 다른 조건을 충족하는 경우에는 배치될 수 있습니다.
+- 쉽게 말하면 라벨에 효과를 다는 것이다.
+
+```shell
+k taint nodes k3d-k3s-default-agent-1 label-2=key-2:NoSchedule
+```
+```shell
+  taints:
+  - effect: NoSchedule
+    key: label-2
+    value: key-2
+```
+
+- taint를 설정하고 아래와 같은 affinity가 있는 파드를 생성해보자.
+```json
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-affinity-anti-affinity
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: label-2
+            operator: In
+            values:
+            - key-2
+  containers:
+  - name: with-node-affinity
+    image: registry.k8s.io/pause:2.0
+```
+- 이론상 nodeAffinity는 label-2=key-2인 곳만 생성될 수 있지만, taints가 걸려있어 어떤 노드에도 할당되면 안된다.
+  - 참고로 label-2=key-2 라벨은 agent-1에만 있다.
+```shell
+$k get pods -o wide --show-labels
+NAME                          READY   STATUS    RESTARTS   AGE   IP       NODE     NOMINATED NODE   READINESS GATES   LABELS
+with-affinity-anti-affinity   0/1     Pending   0          7s    <none>   <none>   <none>           <none>            <none>
+```
+- 결과가 예상대로 나오는 모습을 볼 수 있다.
+- taints가 없을땐 당연히 아래와 같았다.
+```shell
+$ k get pods -o wide --show-labels
+NAME                          READY   STATUS             RESTARTS     AGE   IP          NODE                      NOMINATED NODE   READINESS GATES   LABELS
+with-affinity-anti-affinity   0/1     CrashLoopBackOff   1 (3s ago)   4s    10.42.0.7   k3d-k3s-default-agent-1   <none>
+```
+
+## 톨러레이션
+- 특정 테인트(Taint)를 가진 노드에서도 파드(Pod)를 실행할 수 있도록 허용하는 설정입니다.
+- 파드가 배치될 때 톨러레이션은 다음과 같은 순서로 동작합니다:
+  - 파드가 스케줄러에 의해 노드에 배치되기 전에 톨러레이션 규칙을 검사합니다.
+  - 파드의 tolerations 필드에 지정된 톨러레이션과 노드의 테인트를 비교합니다.
+  - 톨러레이션 규칙과 노드의 테인트가 일치하는 경우, 해당 테인트를 가진 노드에도 파드를 스케줄링합니다.
+- 톨러레인트는 다음과 같은 속성들이 있습니다.
+  - key: 테인트의 키를 지정합니다.
+  - operator: 테인트 키와 톨러레이션 규칙의 키가 일치해야 하는지 확인하는 연산자를 지정합니다. 일치하는 연산자로는 Equal, Exists, NotEqual 등이 있습니다.
+    - equal: taint의 키와 값이 정확히 일치해야 해야 스케줄링 가능하다.
+    - exists: key만 일치하면 된다.
+    - NotEqual: taint의 키와 값이 일치하지 않는 곳에만 스케줄링한다.
+  - value: 테인트의 값(Value)을 지정합니다. 톨러레이션 규칙의 값과 일치해야 합니다.
+  - effect: 톨러레이션 규칙이 적용되는 효과(Effect)를 지정합니다. 일반적으로 NoSchedule을 사용하여 특정 테인트를 가진 노드에서도 파드를 스케줄링할 수 있도록 허용합니다.
+```json
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-affinity-anti-affinity
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: label-2
+            operator: In
+            values:
+            - key-2
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: label-1
+            operator: In
+            values:
+            - key-1
+      - weight: 50
+        preference:
+          matchExpressions:
+          - key: label-2
+            operator: In
+            values:
+            - key-2
+  tolerations:
+  - key: "label-2"
+    operator: "Equal"
+    value: "key-2"
+    effect: "NoSchedule"
+  containers:
+  - name: with-node-affinity
+    image: registry.k8s.io/pause:2.0
+```
+- 위를 실행하면 아까 할당되지 못한 agent-1에 파드가 배치되어야 한다.
+```shell
+$ k get pods -o wide --show-labels
+NAME                          READY   STATUS             RESTARTS     AGE   IP          NODE                      NOMINATED NODE   READINESS GATES   LABELS
+with-affinity-anti-affinity   0/1     CrashLoopBackOff   1 (2s ago)   2s    10.42.0.8   k3d-k3s-default-agent-1   <none>           <none>            <none>
+```
+- 예상대로 되는 모습을 볼 수 있다.
+
 ## Pod Network
 ![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/24ad72ea-6904-4ec5-9e47-263a81f58c90)
 - 컨테이너는 서로 완전 격리, 하지만 파드안에 모든 컨테이너가 자체 네임스페이스가 아니라 동일한 리눅스 네임스페이스를 공유하도록 도커를 설정
@@ -19,6 +375,7 @@
     - 동일한 네임스페이스를 공유해 Pod 안의 컨테이너들 서로 간 통신이 필요할 때, [localhost](http://localhost)(루프백)로 통신 가능
         - 하지만 각각의 컨테이너들은 자체 PID, USER, MNT 네임스페이스를 가져 내부에선 독립적으로 동작 가능
         - 즉 Pod 내부는 하나의 네트워크로 묶입니다.
+
 
 # YAML 또는 JSON 디스크립터로 파드 생성
 
