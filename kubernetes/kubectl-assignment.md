@@ -45,7 +45,7 @@ $ kubectl get pods -l app=nginx
 ```
 4. 디플로이먼트 kubectl 조회 시 라벨 목록 포함하여 조회
 ```shell
-$ kubectl get deployment -o wide
+$ k get deployments nginx-deployment --show-labels=true
 ```
 5. 동일한 결과 출력
 ```
