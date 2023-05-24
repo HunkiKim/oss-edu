@@ -1,5 +1,4 @@
 # Deployment의 데이터
-PV, StorageClass, PVC를 따로 정의해야한다. (자동으로 해주지 않기 때문에.)
 
 <img width="1093" alt="image" src="https://github.com/HunkiKim/Mantech-Edu/assets/66348135/9dc69082-c7af-425a-aa31-c6ffe7e07167">
 
@@ -76,7 +75,62 @@ mysql> select * from users;
   - 하지만 replica를 여러개로 늘리는 순간 PVC를 Pod마다 유지해줘야한다.
 - 즉 파드가 여러개로 되는 순간 Deployment에서 replicas를 여러개로 유지할 수 없다.
 - 즉 위의 이미지대로의 결과는 나올 수 없으며, Pod별로 직접 PVC를 할당해 주지 않는 이상 불가능하다.
-- 롤링업데이트는 가능하지만, pvc를 각각 파드 개수에 맞춰서 만들어놔야한다.
+- 롤링업데이트는 가능하지만 pvc는 결국 하나만 연결되어 있기 때문에 의미가 없다.
+  - 연결되지 않은 나머지 두 개의 파드는 계속해서 Restarts 요청 회수가 늘어나게 된다. 즉 2개의 파드는 pvc 가 연결되지 않는다.
+  - 롤링업데이트시에도 제일 먼저 생성된 컨테이너가 pvc에 연결하게 되며 나머지 두 컨테이너는 연결되지 않고 지속적으로 Restart 요청을 하게 된다.
+```shell
+k get pods -w
+NAME                                READY   STATUS    RESTARTS      AGE
+kubia-deployment-5fb8568f6-m9xw2    1/1     Running   0             3h25m
+kubia-deployment-5fb8568f6-5dwfh    1/1     Running   0             3h25m
+kubia-deployment-5fb8568f6-p744s    1/1     Running   0             3h25m
+mysql-deployment-75b74b68db-rdrfc   1/1     Running   0             118s
+mysql-deployment-75b74b68db-h978r   1/1     Running   1 (13s ago)   118s
+mysql-deployment-75b74b68db-2n9nz   1/1     Running   1 (12s ago)   118s
+mysql-deployment-66bc478755-hznpc   0/1     Pending   0             0s
+mysql-deployment-66bc478755-hznpc   0/1     Pending   0             0s
+mysql-deployment-66bc478755-hznpc   0/1     ContainerCreating   0             0s
+mysql-deployment-66bc478755-hznpc   1/1     Running             0             5s
+mysql-deployment-75b74b68db-h978r   1/1     Terminating         1 (24s ago)   2m9s
+mysql-deployment-66bc478755-8tghj   0/1     Pending             0             0s
+mysql-deployment-66bc478755-8tghj   0/1     Pending             0             0s
+mysql-deployment-66bc478755-8tghj   0/1     ContainerCreating   0             0s
+mysql-deployment-66bc478755-8tghj   1/1     Running             0             2s
+mysql-deployment-66bc478755-rhh5v   0/1     Pending             0             0s
+mysql-deployment-75b74b68db-2n9nz   1/1     Terminating         1 (25s ago)   2m11s
+mysql-deployment-66bc478755-rhh5v   0/1     Pending             0             0s
+mysql-deployment-66bc478755-rhh5v   0/1     ContainerCreating   0             0s
+mysql-deployment-66bc478755-rhh5v   1/1     Running             0             3s
+mysql-deployment-75b74b68db-rdrfc   1/1     Terminating         0             2m14s
+mysql-deployment-75b74b68db-rdrfc   0/1     Terminating         0             2m16s
+mysql-deployment-75b74b68db-rdrfc   0/1     Terminating         0             2m16s
+mysql-deployment-75b74b68db-rdrfc   0/1     Terminating         0             2m16s
+mysql-deployment-75b74b68db-h978r   0/1     Terminating         1 (55s ago)   2m40s
+mysql-deployment-75b74b68db-h978r   0/1     Terminating         1 (55s ago)   2m40s
+mysql-deployment-75b74b68db-h978r   0/1     Terminating         1 (55s ago)   2m40s
+mysql-deployment-75b74b68db-2n9nz   0/1     Terminating         1 (56s ago)   2m42s
+mysql-deployment-75b74b68db-2n9nz   0/1     Terminating         1 (56s ago)   2m42s
+mysql-deployment-75b74b68db-2n9nz   0/1     Terminating         1 (56s ago)   2m42s
+```
+```
+$ k get pods
+k get pods
+NAME                                READY   STATUS    RESTARTS      AGE
+kubia-deployment-5fb8568f6-m9xw2    1/1     Running   0             3h17m
+kubia-deployment-5fb8568f6-5dwfh    1/1     Running   0             3h17m
+kubia-deployment-5fb8568f6-p744s    1/1     Running   0             3h17m
+mysql-deployment-75b74b68db-642sn   1/1     Running   0             2m11s
+mysql-deployment-75b74b68db-vmkn4   1/1     Running   1 (19s ago)   2m11s
+mysql-deployment-75b74b68db-vkftp   1/1     Running   2 (20s ago)   2m11s
+
+$ k get pods
+NAME                                READY   STATUS    RESTARTS      AGE
+kubia-deployment-5fb8568f6-m9xw2    1/1     Running   0             3h29m
+kubia-deployment-5fb8568f6-5dwfh    1/1     Running   0             3h29m
+kubia-deployment-5fb8568f6-p744s    1/1     Running   0             3h29m
+mysql-deployment-66bc478755-8tghj   1/1     Running   0             4m10s
+mysql-deployment-66bc478755-hznpc   1/1     Running   2 (45s ago)   4m15s
+mysql-deployment-66bc478755-rhh5v   1/1     Running   2 (41s ago)   4m8s
 
 # StatefulSet 데이터
 - yaml은 단순히 statefulset으로 바꾸고 진행한다.
