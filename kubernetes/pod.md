@@ -46,7 +46,14 @@ my-pod   0/1     ImagePullBackOff   0          21s
 ```
 
 ## Pod Network
-![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/24ad72ea-6904-4ec5-9e47-263a81f58c90)
+- 파드는 같은 네트워크를 공유합니다. 따라서 루프백을 사용할 수 있습니다.
+![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/4dfb4c2f-4b8e-467c-835b-49dc56801691)
+- 위의 사진을 보면 두 컨테이너와 Pause가 하나의 veth0이라는 가상 네트워크 인터페이스로 묶여 있습니다.
+  - pod가 실행되는 worker node에서 docker ps라고 검색을 하면 적어도 한 개 이상의 pause 명령으로 실행된 컨테이너가 있어 위의 사진에 포함되어 있습니다.
+  - eth0은 피지컬 네트워크 인터페이스입니다.
+  - docker0은 브릿지입니다.
+  - 브릿지를 통해 다른 컨테이너와 통신을 할 수 있습니다.
+    - ex) localhost:80 -> localhost:8080
 - 컨테이너는 서로 완전 격리, 하지만 파드안에 모든 컨테이너가 자체 네임스페이스가 아니라 동일한 리눅스 네임스페이스를 공유하도록 도커를 설정
     - 네임스페이스는 리눅스 커널의 자원을 격리하는 기능
         - IPC, ID, PID 등
@@ -230,7 +237,11 @@ my-pod   0/1     ImagePullBackOff   0          21s
 ## 파드의 조건 (status.conditions)
 - 리소스의 현재 상태를 설명하는 여러 조건을 포함하는 배열입니다.
 - 일반적으로 아래의 속성들을 갖을 수 있습니다.
-  - type: 조건의 유형을 식별하는 문자열입니다. 예를 들어, "Ready", "Initialized", "PodScheduled" 등이 될 수 있습니다.
+  - type: Pod의 상태 조건을 판단하고 모니터링하는 데 사용될 수 있습니다. 각 조건은 Pod의 현재 상태를 나타내며, 이를 기반으로 필요한 작업을 수행할 수 있습니다.
+    - Ready: Pod가 준비 상태인지 여부를 나타냅니다. 모든 컨테이너가 실행되고 준비 상태가 되면 이 조건이 True로 설정됩니다.
+    - Initialized: Pod의 초기화 상태를 나타냅니다. 모든 컨테이너가 초기화되면 이 조건이 True로 설정됩니다.
+    - PodScheduled: Pod가 스케줄링된 상태인지 여부를 나타냅니다. Pod가 노드에 스케줄링되면 이 조건이 True로 설정됩니다.
+    - ContainerReady: 컨테이너가 준비 상태인지 여부를 나타냅니다. 각 컨테이너의 준비 상태에 대한 개별적인 조건을 확인할 수 있습니다.
   - status: 조건의 상태를 나타내는 문자열입니다. "True", "False", "Unknown" 중 하나의 값일 수 있습니다.
     - True: 조건이 만족되었거나 성공적으로 완료되었음을 나타냅니다.
     - False: 조건이 만족되지 않았거나 실패했음을 나타냅니다.
