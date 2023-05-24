@@ -1,7 +1,7 @@
 # Deployment의 데이터
 PV, StorageClass, PVC를 따로 정의해야한다. (자동으로 해주지 않기 때문에.)
 
-![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/685b9a4a-774b-4519-b721-54b29b51c03d)
+<img width="1093" alt="image" src="https://github.com/HunkiKim/Mantech-Edu/assets/66348135/9dc69082-c7af-425a-aa31-c6ffe7e07167">
 
 ```shell
 $ k get pvc                 
