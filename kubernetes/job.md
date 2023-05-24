@@ -40,14 +40,26 @@ $ k get jobs
 NAME     COMPLETIONS   DURATION   AGE
 my-job   1/1           22s        27s
 ```
+제가 이전에 설명한 내용에 오해가 있을 수 있습니다. 제가 언급한 내용이 일반적인 Job의 동작 방식과 일치하지 않았을 것입니다. 죄송합니다.
 
-- 추가적으로 **completions** 속성과 **parallelism** 속성이 있다.
-    - **completions** 속성은 순차적으로 Job 리소스를 생성한다.
-    - **parallelism** 속성은 병렬적으로 같이 Job 생성된다.
-        - Job 실행중 **parallelism 속성을 변경**할 수 있다.
-    
-    - 만약 둘 다 같이 정의되어 있다면 parallelism의 값만큼 completions의 값의 job을 병렬적으로 실행한다.
-      - 예를들면 completions가 5이고, parallelism이 2라면 2개의 인스턴스가 병렬적으로 실행되며 5번 실행될 때 까지 잡을 실행시킵니다.
+실제로, completions 속성은 Job의 완료를 지정하는 것이 아니라, 생성될 파드의 총 수를 지정합니다. Job은 해당 수의 파드를 생성하고 작업을 실행하며, 모든 파드의 작업이 완료되면 Job은 완료됩니다.
+
+parallelism 속성은 동시에 실행될 수 있는 파드의 최대 수를 지정합니다. 이 값은 completions 값보다 작거나 같아야 합니다. parallelism 값이 1보다 큰 경우, Job은 동시에 여러 파드를 생성하고 병렬로 작업을 실행합니다. 작업이 완료되지 않은 파드는 Job이 재시작되거나 다른 파드가 완료될 때까지 대기합니다.
+
+따라서, Job은 completions 속성에 지정된 수의 파드를 생성하고, parallelism 속성에 지정된 수 이하로 동시에 실행합니다. 모든 파드의 작업이 완료되면 Job은 완료됩니다.
+
+- 추가적으로 **completions** 필드과 **parallelism** 필드이 있다.
+    - **completions** 필드은 순차적으로 생성될 파드의 총 수를 지정합니다.
+      - Job은 해당 수의 파드를 생성하고 작업을 실행하며, 모든 파드의 작업이 완료되면 Job은 완료됩니다.
+    - **parallelism** 필드은 병렬적으로 실행될 수 있는 파드의 최대 수를 지정합니다.
+      - completions 값보다 작거나 같아야 합니다.
+      - Job 실행중 **parallelism 속성을 변경**할 수 있다.
+  - completions 필드는 파드가 성공적으로 생성됐는지를 확인할 수 있습니다.
+  ```
+    $ k get jobs
+    NAME     COMPLETIONS   DURATION   AGE
+    my-job   1/15          8s         8s
+  ```
 
 
 - 아래처럼 작업의 복제본 수를 변경해 job을 확장할 수 있다.
@@ -194,7 +206,6 @@ hello-28072846   1/1           3s         24s
 - **startingDeadlineSeconds** 속성이 있다.
     - ?초안에 시작안하면 실패한다는 표시로 간주한다.
     - 실패한 Cronjob은 이후에 다시 스케줄되지 않습니다.
-    - 테스트를 할 수 있는 방법은 따로 없습니다.
     ```json
     metadata:
       name: hello
