@@ -78,40 +78,6 @@ mysql> select * from users;
 - 롤링업데이트는 가능하지만 pvc는 결국 하나만 연결되어 있기 때문에 의미가 없다.
   - 연결되지 않은 나머지 두 개의 파드는 계속해서 Restarts 요청 회수가 늘어나게 된다. 즉 2개의 파드는 pvc 가 연결되지 않는다.
   - 롤링업데이트시에도 제일 먼저 생성된 컨테이너가 pvc에 연결하게 되며 나머지 두 컨테이너는 연결되지 않고 지속적으로 Restart 요청을 하게 된다.
-```shell
-k get pods -w
-NAME                                READY   STATUS    RESTARTS      AGE
-kubia-deployment-5fb8568f6-m9xw2    1/1     Running   0             3h25m
-kubia-deployment-5fb8568f6-5dwfh    1/1     Running   0             3h25m
-kubia-deployment-5fb8568f6-p744s    1/1     Running   0             3h25m
-mysql-deployment-75b74b68db-rdrfc   1/1     Running   0             118s
-mysql-deployment-75b74b68db-h978r   1/1     Running   1 (13s ago)   118s
-mysql-deployment-75b74b68db-2n9nz   1/1     Running   1 (12s ago)   118s
-mysql-deployment-66bc478755-hznpc   0/1     Pending   0             0s
-mysql-deployment-66bc478755-hznpc   0/1     Pending   0             0s
-mysql-deployment-66bc478755-hznpc   0/1     ContainerCreating   0             0s
-mysql-deployment-66bc478755-hznpc   1/1     Running             0             5s
-mysql-deployment-75b74b68db-h978r   1/1     Terminating         1 (24s ago)   2m9s
-mysql-deployment-66bc478755-8tghj   0/1     Pending             0             0s
-mysql-deployment-66bc478755-8tghj   0/1     Pending             0             0s
-mysql-deployment-66bc478755-8tghj   0/1     ContainerCreating   0             0s
-mysql-deployment-66bc478755-8tghj   1/1     Running             0             2s
-mysql-deployment-66bc478755-rhh5v   0/1     Pending             0             0s
-mysql-deployment-75b74b68db-2n9nz   1/1     Terminating         1 (25s ago)   2m11s
-mysql-deployment-66bc478755-rhh5v   0/1     Pending             0             0s
-mysql-deployment-66bc478755-rhh5v   0/1     ContainerCreating   0             0s
-mysql-deployment-66bc478755-rhh5v   1/1     Running             0             3s
-mysql-deployment-75b74b68db-rdrfc   1/1     Terminating         0             2m14s
-mysql-deployment-75b74b68db-rdrfc   0/1     Terminating         0             2m16s
-mysql-deployment-75b74b68db-rdrfc   0/1     Terminating         0             2m16s
-mysql-deployment-75b74b68db-rdrfc   0/1     Terminating         0             2m16s
-mysql-deployment-75b74b68db-h978r   0/1     Terminating         1 (55s ago)   2m40s
-mysql-deployment-75b74b68db-h978r   0/1     Terminating         1 (55s ago)   2m40s
-mysql-deployment-75b74b68db-h978r   0/1     Terminating         1 (55s ago)   2m40s
-mysql-deployment-75b74b68db-2n9nz   0/1     Terminating         1 (56s ago)   2m42s
-mysql-deployment-75b74b68db-2n9nz   0/1     Terminating         1 (56s ago)   2m42s
-mysql-deployment-75b74b68db-2n9nz   0/1     Terminating         1 (56s ago)   2m42s
-```
 ```
 $ k get pods
 k get pods
@@ -131,6 +97,27 @@ kubia-deployment-5fb8568f6-p744s    1/1     Running   0             3h29m
 mysql-deployment-66bc478755-8tghj   1/1     Running   0             4m10s
 mysql-deployment-66bc478755-hznpc   1/1     Running   2 (45s ago)   4m15s
 mysql-deployment-66bc478755-rhh5v   1/1     Running   2 (41s ago)   4m8s
+```
+- Restart 하는 파드의 로그를 확인해보면 mysql 파일을 읽고 사용중이라 락에 걸린걸 확인할 수 있다.
+```
+k logs mysql-deployment-66bc478755-hznpc
+2023-05-24 04:47:59+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.0.33-1.el8 started.
+2023-05-24 04:47:59+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2023-05-24 04:47:59+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.0.33-1.el8 started.
+'/var/lib/mysql/mysql.sock' -> '/var/run/mysqld/mysqld.sock'
+2023-05-24T04:48:00.131565Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2023-05-24T04:48:00.134585Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.33) starting as process 1
+2023-05-24T04:48:00.141674Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2023-05-24T04:48:00.157869Z 1 [ERROR] [MY-012574] [InnoDB] Unable to lock ./ibdata1 error: 11
+2023-05-24T04:48:01.158065Z 1 [ERROR] [MY-012574] [InnoDB] Unable to lock ./ibdata1 error: 11
+2023-05-24T04:48:02.158399Z 1 [ERROR] [MY-012574] [InnoDB] Unable to lock ./ibdata1 error: 11
+2023-05-24T04:48:03.159021Z 1 [ERROR] [MY-012574] [InnoDB] Unable to lock ./ibdata1 error: 11
+2023-05-24T04:48:04.159571Z 1 [ERROR] [MY-012574] [InnoDB] Unable to lock ./ibdata1 error: 11
+2023-05-24T04:48:05.159944Z 1 [ERROR] [MY-012574] [InnoDB] Unable to lock ./ibdata1 error: 11
+2023-05-24T04:48:06.160524Z 1 [ERROR] [MY-012574] [InnoDB] Unable to lock ./ibdata1 error: 11
+2023-05-24T04:48:07.161039Z 1 [ERROR] [MY-012574] [InnoDB] Unable to lock ./ibdata1 error: 11
+2023-05-24T04:48:08.162173Z 1 [ERROR] [MY-012574] [InnoDB] Unable to lock ./ibdata1 error: 11
+```
 
 # StatefulSet 데이터
 - yaml은 단순히 statefulset으로 바꾸고 진행한다.
