@@ -47,13 +47,10 @@ my-pod   0/1     ImagePullBackOff   0          21s
 
 ## Pod Network
 - 파드는 같은 네트워크를 공유합니다. 따라서 루프백을 사용할 수 있습니다.
-![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/4dfb4c2f-4b8e-467c-835b-49dc56801691)
-- 위의 사진을 보면 두 컨테이너와 Pause가 하나의 veth0이라는 가상 네트워크 인터페이스로 묶여 있습니다.
-  - pod가 실행되는 worker node에서 docker ps라고 검색을 하면 적어도 한 개 이상의 pause 명령으로 실행된 컨테이너가 있어 위의 사진에 포함되어 있습니다.
-  - eth0은 피지컬 네트워크 인터페이스입니다.
-  - docker0은 브릿지입니다.
-  - 브릿지를 통해 다른 컨테이너와 통신을 할 수 있습니다.
-    - ex) localhost:80 -> localhost:8080
+- POD내 네트워크
+![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/f00f6719-49d3-421a-8e86-3ee99d36b79a)
+- POD간 네트워크
+![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/0e6c63f0-a60a-40c3-9ab8-a5dd1140caf0)
 - 컨테이너는 서로 완전 격리, 하지만 파드안에 모든 컨테이너가 자체 네임스페이스가 아니라 동일한 리눅스 네임스페이스를 공유하도록 도커를 설정
     - 네임스페이스는 리눅스 커널의 자원을 격리하는 기능
         - IPC, ID, PID 등
