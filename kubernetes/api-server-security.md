@@ -291,7 +291,7 @@ mysql-deployment-cc6d96fc7-npqc6   1/1     Rk unning   0          54s
 - 여러 개의 플러그인이 병렬로 활성화돼 있을 수 있으며 그중 하나라도 액션을 수행하도록 허용하는 경우 액션이 허용된다.
 
 ### 네임스페이스 생성과 파드 실행
-- Role
+- Role : pod에 읽기 권한을 부여해주는 default namespace의 role
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -304,7 +304,8 @@ rules:
   verbs: ["get", "list", "watch"] # 허용되는 동작
 
 ```
-- RoleBinding
+- RoleBinding : jane에게 "default" namespace의 pod-reader role의 권한을 준다. 이는 jane이 "default" namespace의 파드들을 읽는 권한을 준다.
+  - 또 추가적으로 ClusterRole을 참조할 수 있다.
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 # This role binding allows "jane" to read pods in the "default" namespace.
@@ -315,17 +316,16 @@ metadata:
   namespace: default
 subjects:
 # You can specify more than one "subject"
-- kind: User
-  name: hunki # "name" is case sensitive
-  apiGroup: rbac.authorization.k8s.io
+- kind: ServiceAccount
+  name: dev01
+  apiGroup: ""
 roleRef:
 # "roleRef" specifies the binding to a Role / ClusterRole
   kind: Role #this must be Role or ClusterRole
   name: pod-reader # this must match the name of the Role or ClusterRole you wish to bind to
   apiGroup: rbac.authorization.k8s.io
-
 ```
-- ClusterRole
+- ClusterRole : 모든 네임스페이스의 secret의 읽기 권한이 주어진다.
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClutserRole
@@ -336,7 +336,7 @@ rules:
   resources: ["secrets"]
   verbs: ["get", "watch", "list"]
 ```
-- ClusterRoleBinding
+- ClusterRoleBinding : manager 그룹에게 어떤 네임스페이스안에 있는 시크릿을 읽을 수 있는 권한을 줍니다.
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 # This cluster role binding allows anyone in the "manager" group to read secrets in any namespace.
@@ -351,4 +351,67 @@ roleRef:
   kind: ClusterRole
   name: secret-reader
   apiGroup: rbac.authorization.k8s.io
+```
+
+이제 Role을 추가하면 아래와 같이 나온다.
+
+서비스 어카운트에 롤을 바인딩
+
+우선 서비스 어카운트 토큰을 생성해야 한다.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dev01-token
+  annotations:
+    kubernetes.io/service-account.name: dev01
+type: kubernetes.io/service-account-token
+```
+$ k apply -f secret-serviceaccount.yaml
+secret/dev01-token created
+
+$ k describe secret dev01-token
+Name:         dev01-token
+Namespace:    default
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: dev01
+              kubernetes.io/service-account.uid: 5da8dfba-20db-45a5-adbb-e85fc2790db5
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+ca.crt:     570 bytes
+namespace:  7 bytes
+token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IjNmWUdpcTNDdHQ3akszVVpDVFpxTnlxaldERkJKU3pGbUFFTmJMbDZCRFkifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRldjAxLXRva2VuIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRldjAxIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiNWRhOGRmYmEtMjBkYi00NWE1LWFkYmItZTg1ZmMyNzkwZGI1Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZGV2MDEifQ.TK2iUWT0l1lDG5H8rqUidvQwAn_073hcpPTkbr79PD0kaCHCrwZ9EwN8F-QKV9hmSD7la0b2s83JSET696-lUOGRTbZ4qH5ZFUxt80nKfHnxMaR_7gypPGefd7dlpBWpxYH3Wc1dv_tD9R3H8-CYKPpagptd0-vXHyU7mQbR2MR9gpD00Rmm01atL4ySco7dmWW-ciaqQTG4qpWQFzTr8s_WfWBTGq8BDzItGSv8Gn_JbVRptfdgRmRudgaRwya71PK8iIzu-4956d00W0r2MwSTSb2e_6lX87cRx5PfWWf9SZoaZYpD47uNYimqFqcFNoerS3G-Xl-Ix_lhomiopg
+```shell
+
+
+$ openssl rand -base64 32
+PiQKy8D4XX4cNu/apsKcWfRoJH9cU+63+nntDsqhIIE=
+
+$ k apply -f role.yaml
+
+$ k apply -f role-binding.yaml
+```
+
+- 이제 아래의 명령어를 통해 사용자 생성을 진행한다.
+```shell
+$ k config set-credentials hunki --token=dev01
+User "hunki" set.
+
+$ k config get-clusters
+NAME
+rancher-desktop
+
+$ k config set-context test-context --cluster=rancher-desktop --user=hunki
+Context "test-context" created.
+
+$ k apply -f role-binding.yaml
+rolebinding.rbac.authorization.k8s.io/read-pods created
+
+$ k config use-context test-context
+Switched to context "test-context".
+# 참고 : 삭제 명령은 kubectl config delete-context [context명]
 ```
