@@ -72,6 +72,7 @@
 이 두 가지 유형의 클라이언트는 모두 위에서 언급한 인증 플러그인을 사용해 인증된다.
 
 - 사용자는 싱글 사인 온(SSO, Single Sign On)과 같은 외부 시스템에 의해 관리돼야 하지만 파드는 서비스 어카운트(service account)라는 메커니즘을 사용하며, 클러스터에 서비스 어카운트 리소스로 생성되고 저장된다.
+  - 싱글 사인 온은 OAuth, OpenID Connect 등과 같이 사용자가 여러 애플리케이션 또는 시스템에 대해 단일 인증으로 접근할 수 있는 인증 메커니즘이다.
   - 사용자 계정을 나태내는 자원은 없고, API 서버를 통해 사용자를 관리할 수 없다는 의미이다.
 
 서비스 어카운트는 파드를 실행하는 데 필수적이므로 먼저 공부한다.
@@ -86,7 +87,7 @@
 
 ## 서비스어카운트 소개
 - 클라이언트는 API 서버에서 작업을 수행하기 전에 자신을 인증해야 한다.
-- 시크릿 볼륨으로 각 컨테이너의 파일시스템에 마운트된 /var/run/secrets/kubernetes.io/serviceaccount/token 파일의 내용을 전송해 파다를 인증할 수 있다.
+- 시크릿 볼륨으로 각 컨테이너의 파일시스템에 마운트된 /var/run/secrets/kubernetes.io/serviceaccount/token 파일의 내용을 전송해 파드를 인증할 수 있다.
   - 모든 파드는 파드에서 실행 중인 애플리케이션의 아이덴티티를 나타내는 서비스어카운트와 연계돼있다.
   - 이 토큰 파일은 서비스어카운트의 인증 토큰을 갖고 있다.
   - 애플리케이션이 이 토큰을 사용해 API 서버에 접속하면 인증 플러그인이 서비스어카운트를 인증하고 서비스어카운트의 사용자 이름을 API 서버 코어로 전달한다.
@@ -136,7 +137,7 @@ Events:              <none>
 
 ### 서비스어카운트의 마운트 가능한 시크릿 이해
 - k describe를 사용해 서비스어카운트를 검사하면 토큰이 Mountable secrets 목록에 표시된다.
-  - 기본적으론 원하는 시크릿을 마운트 할 수 잇지만, 마운트 가능한 시크릿 목록에 잇는 시크릿만 마운트하드록 파드의 서비스어카운트를 설정할 수 있다.
+  - 기본적으론 원하는 시크릿을 마운트 할 수 잇지만, 마운트 가능한 시크릿 목록에 잇는 시크릿만 마운트하도록 파드의 서비스어카운트를 설정할 수 있다.
   - 이 기능을 사용하기 위해선 *kubernetes.io/enforce-mountable-secrets="trun ".* 어노테이션을 포함해야한다.
 
 ### 서비스어카운트의 이미지 풀 시크릿 이해
@@ -271,7 +272,7 @@ mysql-deployment-cc6d96fc7-npqc6   1/1     Rk unning   0          54s
 
 ### RBAC 플러그인 이해
 - 이름처럼 RBAC 인가 플러그인은 사용자가 액션을 수행할 수 있는지 여부를 결정하는 핵심 요소로 사용자 롤(user role)을 사용한다.
-- 주체(사람, 서비스어카운트, 또는 사용자나 서비스어카운트의 그룹일 수 ㅐㅔ있음)는 하나 이상의 롤과 연계돼 있으며 각 롤은 특정 리소스에 특정 동사를 수행할 수 있다.
+- 주체(사람, 서비스어카운트, 또는 사용자나 서비스어카운트의 그룹일 수 있음)는 하나 이상의 롤과 연계돼 있으며 각 롤은 특정 리소스에 특정 동사를 수행할 수 있다.
 - 여러 롤이 있다면 롤에서 허용하는 모든 작업을 수행할 수 있다.
 
 ## RBAC 리소스 소개
@@ -284,6 +285,18 @@ mysql-deployment-cc6d96fc7-npqc6   1/1     Rk unning   0          54s
 - 롤과 롤바인딩 그리고 클러스터롤과 클러스터롤바인딩의 차이점은 롤과 롤바인딩은 네임스페이스가 지정된 리소스이고 클러스터롤과 클러스터롤바인딩은 네임스페이스를 지정하지 않는 클러스터 수준의 리소스라는 것이다.
 
 ![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/0ec58222-ad5e-4c28-b5cd-0114501d1747)
+### 중간 정리
+
+- Role: 특정 네임스페이스 내에서 사용되는 역할(Role)을 정의합니다. Role은 해당 네임스페이스의 리소스에 대한 권한을 명시적으로 지정하는 데 사용됩니다.
+
+- RoleBinding: RoleBinding은 네임스페이스 내에서 Role을 참조하여 특정 주체(사용자, 그룹, 서비스 계정 등)에게 권한을 부여합니다. RoleBinding을 사용하여 Role에 정의된 권한을 특정 주체에게 할당합니다.
+
+- ServiceAccount: ServiceAccount는 Kubernetes에서 실행되는 애플리케이션에 할당되는 서비스 계정을 나타냅니다. ServiceAccount는 네임스페이스 내에서 리소스에 대한 액세스 권한을 부여하는 데 사용됩니다. 각 Pod는 실행되는 동안에는 해당 네임스페이스의 기본 ServiceAccount를 가집니다.
+
+- ServiceAccountToken: ServiceAccountToken은 서비스 계정 인증을 위해 사용되는 토큰입니다. Kubernetes 클러스터 내에서 각 서비스 계정은 고유한 토큰을 가지며, 이 토큰을 사용하여 인증 및 권한 부여를 수행합니다.
+
+- 요약하면, Role은 권한을 정의하고, RoleBinding은 Role의 권한을 특정 주체에게 할당합니다. ServiceAccount는 애플리케이션에 할당되는 서비스 계정을 나타내며, ServiceAccountToken은 서비스 계정 인증을 위한 토큰입니다.
+
 
 ### 실습을 위한 설정
 - RBAC 리소스가 API 서버로 수행할 수 있는 작업에 어떤 영향을 주는지 살펴보기 전에 클러스터에 RBAC가 활성화돼 있는지 확인해야 한다.
@@ -304,7 +317,7 @@ rules:
   verbs: ["get", "list", "watch"] # 허용되는 동작
 
 ```
-- RoleBinding : jane에게 "default" namespace의 pod-reader role의 권한을 준다. 이는 jane이 "default" namespace의 파드들을 읽는 권한을 준다.
+- RoleBinding : dev01 ServiceAccount에게 "default" namespace의 pod-reader role의 권한을 준다.
   - 또 추가적으로 ClusterRole을 참조할 수 있다.
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -325,39 +338,8 @@ roleRef:
   name: pod-reader # this must match the name of the Role or ClusterRole you wish to bind to
   apiGroup: rbac.authorization.k8s.io
 ```
-- ClusterRole : 모든 네임스페이스의 secret의 읽기 권한이 주어진다.
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClutserRole
-metadata:
-  name: secret-reader
-rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["get", "watch", "list"]
-```
-- ClusterRoleBinding : manager 그룹에게 어떤 네임스페이스안에 있는 시크릿을 읽을 수 있는 권한을 줍니다.
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-# This cluster role binding allows anyone in the "manager" group to read secrets in any namespace.
-kind: ClusterRoleBinding
-metadata:
-  name: read-secrets-global
-subjects:
-- kind: Group
-  name: manager # Name is case sensitive
-  apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: ClusterRole
-  name: secret-reader
-  apiGroup: rbac.authorization.k8s.io
-```
 
-이제 Role을 추가하면 아래와 같이 나온다.
-
-서비스 어카운트에 롤을 바인딩
-
-우선 서비스 어카운트 토큰을 생성해야 한다.
+- 서비스 어카운트 토큰을 생성을 먼저하자.
 
 ```yaml
 apiVersion: v1
@@ -368,6 +350,7 @@ metadata:
     kubernetes.io/service-account.name: dev01
 type: kubernetes.io/service-account-token
 ```
+```shell
 $ k apply -f secret-serviceaccount.yaml
 secret/dev01-token created
 
@@ -385,11 +368,9 @@ Data
 ca.crt:     570 bytes
 namespace:  7 bytes
 token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IjNmWUdpcTNDdHQ3akszVVpDVFpxTnlxaldERkJKU3pGbUFFTmJMbDZCRFkifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRldjAxLXRva2VuIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRldjAxIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiNWRhOGRmYmEtMjBkYi00NWE1LWFkYmItZTg1ZmMyNzkwZGI1Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZGV2MDEifQ.TK2iUWT0l1lDG5H8rqUidvQwAn_073hcpPTkbr79PD0kaCHCrwZ9EwN8F-QKV9hmSD7la0b2s83JSET696-lUOGRTbZ4qH5ZFUxt80nKfHnxMaR_7gypPGefd7dlpBWpxYH3Wc1dv_tD9R3H8-CYKPpagptd0-vXHyU7mQbR2MR9gpD00Rmm01atL4ySco7dmWW-ciaqQTG4qpWQFzTr8s_WfWBTGq8BDzItGSv8Gn_JbVRptfdgRmRudgaRwya71PK8iIzu-4956d00W0r2MwSTSb2e_6lX87cRx5PfWWf9SZoaZYpD47uNYimqFqcFNoerS3G-Xl-Ix_lhomiopg
+```
+- 이제 롤과 롤바인딩을 생성한다.
 ```shell
-
-
-$ openssl rand -base64 32
-PiQKy8D4XX4cNu/apsKcWfRoJH9cU+63+nntDsqhIIE=
 
 $ k apply -f role.yaml
 
@@ -398,7 +379,10 @@ $ k apply -f role-binding.yaml
 
 - 이제 아래의 명령어를 통해 사용자 생성을 진행한다.
 ```shell
-$ k config set-credentials hunki --token=dev01
+$ k get secret dev01-token -o jsonpath='{.data.token}' | base64 --decode
+eyJhbGciOiJSUzI1NiIsImtpZCI6IkJKQS1fbDNJaGpyREh1cFo1d0ZKRVU3bTNMTU9ZOUd4R29yNUxQMUxfVzgifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRldjAxLXRva2VuIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRldjAxIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiYzkzNWQxZGQtZTFiNS00NTk4LTgwY2ItYzlhNDg5NjNiODZiIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZGV2MDEifQ.HIGGuZP9NrL4kRLdM7WfJ9FYFr5f-cSYkG-CDfR9VgpB4iCb3T_oWxNJBlLvUahDJBhHYal8sIn_FpnYDNFIJsELClc31HX_A3wKNfWIADSzD91kElGvZtTjkxiBGkVWR9jYqGu3GVhmJnXFlWIFy3hYWFNXHesNMrjs5myZhuCXVfUHIFbtiKNDCZTTiUNLgrJB8_Q4P1gYizmLflOJFSyvAC0cDzKqXUz7gh-YmY_eDTTg3rQU-H4Wx7Rghx13EtmldS0QdSjcqghDysU86nkwBoTcJR3URy2KlngljDeA51ctiwL5PeYPmeQEl_kjL9ykO3nzebalrJ71QEZ2gA%
+
+$ k config set-credentials hunki --token={decoded-token}
 User "hunki" set.
 
 $ k config get-clusters
@@ -408,10 +392,252 @@ rancher-desktop
 $ k config set-context test-context --cluster=rancher-desktop --user=hunki
 Context "test-context" created.
 
-$ k apply -f role-binding.yaml
-rolebinding.rbac.authorization.k8s.io/read-pods created
-
 $ k config use-context test-context
 Switched to context "test-context".
 # 참고 : 삭제 명령은 kubectl config delete-context [context명]
 ```
+
+- 위 까지 하면 해당 콘텍스트의 유저권한 테스트는 잘되지만 서비스 어카운트는 파드에 권한을 주기위해 주로 사용한다. 따라서 Pod에 서비스 어카운트를 주는걸 실습해보자.
+- 유저같은 경우는 외부에서 인증서 형식을 사용한다.
+
+
+## 클러스터롤과 클러스터롤바인딩 사용하기
+- 롤과 롤바인딩은 네임스페이스가 지정된 리소스로, 하나의 네임스페이스상에 상주하며 해당 네임스페이스의 리소스에 적용된다는 것을 의미하지만 롤바인딩은 다른 네임스페이스의 서비스어카운트도 참조할 수 있다.
+- 하지만 매번 네임스페이스가 생길때마다 네임스페이스에 같은 권한에 대해 Role, RoleBinding을 만들어 서비스 어카운트에 권하을 부여하는것은 귀찮은 일이다.
+- 클러스터롤과 클러스터롤바인딩은 네임스페이스를 지정하지 않는 클러스터 수준의 RBAC 리소스이다. 따라서 모든 네임스페이스에서 사용이 가능하다.
+- 또한 네임스페이스를 지정하지 않는 리소스가 있다. 여기에 룰을 적용하기 위해선 클러스터수준의 RBAC가 필요하다.
+  - PV, Node, Namespace 등이 있다.
+  - 그리고 API 서버는 리소스를 나타내지 않는 일부 URL 경로를 노출한다. (/healthz) 일반적인 롤로는 이런 리소스나 리소스가 아닌 URL에 관한 엑세스 권한을 부여할 수 없지만 클러스터롤은 가능하다.
+
+## 클러스터 수준 리소스에 엑세스 허용
+- 파드가 pv를 나열할 수 있는 권한을 이용해보자.
+  - pv는 클러스터수준의 리소스이기 때문에 적합하다.
+```shell
+$ k create clusterrole pv-reader --verb=get,list --resource=persistentvolumes
+```
+
+이제 해당 context로 가서 get pv를 해보자.
+```
+$ k get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM               STORAGECLASS   REASON   AGE
+pvc-fd5153fb-f5ad-40ec-9882-d4c5322730f1   1Gi        RWO            Delete           Bound    default/mysql-pvc   local-path              45h
+```
+- 권한을 삭제하면?
+
+
+```
+$ k get pv
+Error from server (Forbidden): persistentvolumes is forbidden: User "system:serviceaccount:default:dev01" cannot list resource "persistentvolumes" in API group "" at the cluster scope
+```
+
+![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/369150b2-a728-432c-b165-cd92f0ec24fe)
+![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/60ecb45c-3b44-400c-840d-cdbfa8acc3ac)
+
+
+## 리소스가 아닌 URL에 엑세스 허용하기
+- API서버는 리소스가 아닌 URL도 노출한다.
+```yaml
+$ k get clusterrole system:discovery -o yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+...
+rules:
+- nonResourceURLs:
+  - /api
+  - /api/*
+  - /apis
+  - /apis/*
+  - /healthz
+  - /livez
+  - /openapi
+  - /openapi/*
+  - /readyz
+  - /version
+  - /version/
+  verbs:
+  - get
+```
+
+- 해당 클러스터롤이 get http method의 url들을 참조한다. 즉 권한을 준다.
+- URL의 클러스터롤은 클러스터롤바인딩으로 바인딩돼야 한다.
+
+```yaml
+$ k get clusterrolebinding system:discovery -o yaml
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  creationTimestamp: "2023-05-22T08:20:05Z"
+  labels:
+    kubernetes.io/bootstrapping: rbac-defaults
+  name: system:discovery
+  resourceVersion: "135"
+  uid: ed3fe50b-9893-4158-91a4-ef17fac7fb85
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:discovery
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: system:authenticated
+```
+
+- 인증된 사용자만 subjects에 있어 인증된 사용자만 클러스터롤에 나열된 URL에 엑세스 할 수 있다.
+
+## 특정 네임스페이스의 리소스에 액세스 권한을 부여하기 위해 클러스터롤 사용하기
+- 클러스터롤이 항상 클러스터 수준 클러스터롤바인딩과 바인딩될 필요 없다. 네임스페이스를 갖는 일반적인 롤 바인딩과 바인딩될 수도 있다.
+- view를 보면 많인 규칙이 있지만 ConfigMaps, Endpoints, PersistentVolumeClaim 등과 같은 리소스를 가져오고(get) 나열(list)하고 볼 수 있게 허용된다.
+```yaml
+$ k get clusterrole view -o yaml
+
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      rbac.authorization.k8s.io/aggregate-to-view: "true"
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  creationTimestamp: "2023-05-22T08:20:05Z"
+  labels:
+    kubernetes.io/bootstrapping: rbac-defaults
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+  name: view
+  resourceVersion: "474"
+  uid: 0dbecb6e-eca9-4e42-9c14-2cf8eae45c3b
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - persistentvolumeclaims
+  - persistentvolumeclaims/status
+  - pods
+  - replicationcontrollers
+  ...
+```
+
+- 위의 리소스들은 네임스페이스가 지정된 리소스이지만, 현재 보는건 클러스터롤이다.
+- 클러스터롤은 클러스터롤바인딩과 롤바인딩 중 어디에 바인딩되느냐에 따라 다르다.
+  - 클러스터롤바인딩을 생성하고 클러스터롤을 참조하면, 바인딩에 나열된 주체는 모든 네임스페이스에 있는 지정된 리소스를 볼 수 있다.
+  - 반면 롤바인딩을 만들면 바인딩에 나열된 주체가 롤바인딩의 네임스페이스에 있는 리소스만 볼 수 있다.
+
+
+- 이제 아무 권한이 없는 유저에 대해 클러스터롤바인딩을 부여하면 어떻게 되는지 보려한다.
+```shell
+$ k create clusterrolebinding view-test --clusterrole=view --serviceaccount=default:dev01
+```
+그러면 아래와 같은 결과를 얻는다.
+```
+$ k get pods
+NAME                                READY   STATUS    RESTARTS   AGE
+ubuntu-deployment-f78c99cc7-rf5xs   1/1     Running   0          171m
+ubuntu-deployment-f78c99cc7-zxmc5   1/1     Running   0          171m
+ubuntu-deployment-f78c99cc7-4xf2f   1/1     Running   0          171m
+```
+
+- default 뿐만 아니라 모든 네임스페이스의 파드를 나열할 수 있다.
+
+```shell
+$ k get pods -A
+
+NAMESPACE     NAME                                      READY   STATUS      RESTARTS   AGE
+kube-system   local-path-provisioner-79f67d76f8-8mlfb   1/1     Running     0          3d20h
+kube-system   coredns-597584b69b-sfstb                  1/1     Running     0          3d20h
+kube-system   metrics-server-5f9f776df5-c89lx           1/1     Running     0          3d20h
+kube-system   helm-install-traefik-crd-frcb2            0/1     Completed   0          3d20h
+kube-system   helm-install-traefik-pgxvf                0/1     Completed   0          3d20h
+kube-system   svclb-traefik-574b90f0-l5lrf              2/2     Running     0          3d20h
+kube-system   svclb-traefik-574b90f0-jtcwl              2/2     Running     0          3d20h
+kube-system   svclb-traefik-574b90f0-6wkkj              2/2     Running     0          3d20h
+kube-system   svclb-traefik-574b90f0-v9zcf              2/2     Running     0          3d20h
+kube-system   traefik-66c46d954f-gwkb2                  1/1     Running     0          3d20h
+default       ubuntu-deployment-f78c99cc7-rf5xs         1/1     Running     0          172m
+default       ubuntu-deployment-f78c99cc7-zxmc5         1/1     Running     0          172m
+default       ubuntu-deployment-f78c99cc7-4xf2f         1/1     Running     0          172m
+```
+
+![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/90953ed8-c103-48eb-952d-0863bdd1aa61)
+
+- 위의 사진처럼 특정 네임스페이스의 서비스 어카운트가 클러스터롤수준의 롤을 적용시켜 다른 네임스페이스의 파드까지 볼 수 있게 되었다.
+
+이제 클러스터 롤 바인딩을 롤 바인딩으로 교체해보자.
+
+```shell
+$ k delete clusterrolebindings.rbac.authorization.k8s.io view-test
+clusterrolebinding.rbac.authorization.k8s.io "view-test" deleted
+
+$ k create rolebinding view-test --clusterrole=view --serviceaccount=default:dev01
+rolebinding.rbac.authorization.k8s.io/view-test created
+```
+
+```shell
+$ k get pods -n default
+NAME                                READY   STATUS    RESTARTS   AGE
+ubuntu-deployment-f78c99cc7-rf5xs   1/1     Running   0          3h2m
+ubuntu-deployment-f78c99cc7-zxmc5   1/1     Running   0          3h2m
+ubuntu-deployment-f78c99cc7-4xf2f   1/1     Running   0          3h2m
+```
+
+```shell
+$ k get pods -n foo
+Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:default:dev01" cannot list resource "pods" in API group "" in the namespace "foo"
+
+$ k get pods -A
+Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:default:dev01" cannot list resource "pods" in API group "" at the cluster scope
+```
+
+롤바인딩에 속한 , 즉 서비스어카운트가 속한 네임스페이스에서의 리소스 권한만 가지고 있다. 아래 이미지를 참고하자.
+
+![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/7004b328-e812-4795-9d1c-0f9cd2c435f3)
+
+## 롤, 클러스터롤, 롤바인딩과 클러스터롤바인딩 조합의 관한 요약
+요약하자면 아래와 같다.
+![image](https://github.com/HunkiKim/Mantech-Edu/assets/66348135/628d72a8-736f-4ddf-9962-547bb81480a9)
+
+# 디폴트 클러스터롤과 클러스터롤바인딩의 이해
+- 쿠버네티스는 API 서버가 시작될 때마다 업데이트되는 클러스터롤과 클러스터롤바인딩의 디폴트 세트를 제공한다.
+  - 이렇게 하면 실수로 삭제하거나 최신 버전의 쿠버네티스가 클러스터 롤과 바인딩을 다르게 설정해 사용하더라도 모든 디폴트 롤과 바인딩을 다시 생성되게 한다.
+  - *k get clusterrolebindings*, *k get clusterrole* 명령어를 통해 확인 가능하다.
+- 가장 중요한 롤은 view, edit, admin 그리고 cluster-admin 클러스터롤이다. 이들은 사용자 정의 파드에서 사용하는 서비스어카운트에 바인딩되기 위한 것이다.
+
+## view 클러스터롤을 사용해 리소스에 읽기 전용 엑세스 허용하기
+- 이전 예제에서 이미 default view clusterrole을 사용했다. 롤, 롤바인딩, 시크릿을 제외한 네임스페이스 내의 거의 모든 리소스를 읽을 수 있다. 
+  - 시크릿은 view보다 더 큰 권한을 갖는 인증 토큰이 포함될 수 있으며, 사용자가 다른 사용자로 가정해 추가 권한(권한 에스컬레이션)을 얻을 수 있기 때문이다.
+
+## edit 클러스터롤을 사용해 리소스에 변경 허용하기
+- 다음으로 edit 클러스터롤은 네임스페이스 내의 리소스를 수정할 수 있을 뿐만 아니라 시크릿을 읽고 수정할 수도 있다. 
+  - 그러나 롤 또는 롤바인딩을 보거나 수정하는 것은 허용되지 않는다. 이것 또한 권한 상승을 방지하기 위한 것이다.
+
+## admin 클러스터롤을 사용해 네임스페이스에 제어 권한 허용하기
+- 네임스페이스에 완전한 제어 권한이 admin 클러스터롤에 부여된다.
+- 이 클러스터롤을 가진 주체는 리소스쿼터와 네임스페이스 리소스 자체를 제외한 네임스페이스 내의 모든 리소스를 읽고 수정할 수 있다.
+- edit과 admin의 주요 차이는 롤과 롤바인딩을 수정할 수 있다는 점이다.
+> 리소스 쿼터(Resource Quota)는 Kubernetes에서 네임스페이스별 리소스 사용량을 제한하는 정책입니다. 
+
+## cluster-admin 클러스터롤을 사용해 완전한 제어 허용하기 
+- 쿠버네티스 클러스터를 완전하게 제어하려면 cluster-admin 클러스터롤을 주체에 할당하면 된다. 
+- 롤바인딩을 생성해 할당해주면 생성된 네임스페이스의 모든 측면을 완전하게 제어 가능하다.
+  - 모든 네임스페이스를 와전하게 제어하려면 클러스터롤바인딩에서 cluster-admin롤을 참조하면 된다.
+
+## 그 밖의 디폴트클러스터롤 이해하기
+- 디폴트 클러스터롤 목록에는 접두사 system:으로 시작하는 클러스터롤이 있다.
+  - 이들은 다양한 쿠버네티스의 구성요소에서 사용된다.
+  - 그중 스케줄러에서 사용되는 system:kube-scheduler와 Kubelet에서 사용되는 system:node 등이 있다.
+- 이외에도 컨트롤러 매니저 등과 같은 시스템 컴포넌트들의 클러스터롤들이 존재한다.
+
+# 인가 권한을 현명하게 부여하기
+- 기본적으로 네임 스페이스의 디폴트 서비스어카운트에는 인증되지 않은 사용자의 권한 이외에는 어떤 권한도 없다. 
+- 따라서 기본적으로 파드는 클러스터 상태조차 볼 수 없다. 이에 대한 권한을 부여하는 것은 사용자의 몫이다.
+- 하지만 보안이 그렇듯, 자신에 일에 꼭 필요한 권한만 부여해 한 가지 이상의 권한을 주지 않는 것이 가장 좋다.(최소 권한 법칙)
+
+## 각 파드에 특정 서비스어카운트 생성
+- 각 파드(복제본 세트)를 위한 특정 서비스어카운트를 생성한 다음 롤바인딩으로 맞춤형 롤(또는 클러스터롤)과 연계하는 것이 바람직한 접근 방법이다.
+- 초반부에서 처럼 파드를 읽는 서비스어카운트, 수정하는 서비스 어카운트를 만들고, 각 파드 스펙의 serviceAccountName 속성에 이 서비스어카운트를 사용하는것이 예시이다.
+  - 양쪽 파드에 필요한 모든 권한을 네임스페이스의 디폴트 서비스어카운트에 추가하지말자.
+
