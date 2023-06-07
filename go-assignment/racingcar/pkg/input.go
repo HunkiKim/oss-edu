@@ -8,10 +8,10 @@ import (
 )
 
 func InputAll() ([]string, int, error) {
-	var name string
+	var input string
 	fmt.Print("이름:")
-	fmt.Scan(&name)
-	names, err := getNamesByInput(name)
+	fmt.Scan(&input)
+	names, err := getNamesByInput(input)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -29,12 +29,12 @@ func InputAll() ([]string, int, error) {
 	return names, turns, err
 }
 
-func getNamesByInput(input string) ([]string, error) { //시그니쳐를 생각해서 바꿔보기
+func getNamesByInput(input string) ([]string, error) {
 	names := strings.Split(input, ",")
 
 	for _, name := range names {
-		if checkErr := checkName(name); checkErr != nil {
-			return nil, checkErr
+		if err := checkName(name); err != nil {
+			return nil, err
 		}
 	}
 	return names, nil
@@ -48,6 +48,7 @@ func checkName(name string) error {
 		return errors.New("name must be less than or equal to 10")
 	case matched:
 		return errors.New("name must be korean or english")
+	default:
+		return nil
 	}
-	return nil
 }

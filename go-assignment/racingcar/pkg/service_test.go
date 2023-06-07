@@ -32,7 +32,6 @@ func Test_createUsers(t *testing.T) {
 			if len(result) != len(d.expected) {
 				t.Error("The number of users created is different")
 			}
-			// 비즈니스로직
 		})
 	}
 }

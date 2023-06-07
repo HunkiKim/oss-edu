@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_inputName(t *testing.T) { //Example_ prefix찾아보기
+func Test_inputName(t *testing.T) {
 	data := []struct {
 		testName string
 		name     string
@@ -27,7 +27,6 @@ func Test_inputName(t *testing.T) { //Example_ prefix찾아보기
 			if diff := cmp.Diff(result, d.expected); diff != "" {
 				t.Errorf(diff)
 			}
-
 		})
 	}
 }
