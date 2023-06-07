@@ -7,30 +7,30 @@ import (
 	"strings"
 )
 
-func InputAll() ([]string, int, error) { // Init or Input (All)
+func InputAll() ([]string, int, error) { // Init or Input (All) 이름 생각해보기
 	var name string
 	fmt.Print("이름:")
 	fmt.Scan(&name)
-	names, err := inputName(name)
+	names, err := getNamesByInput(name)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	fmt.Print("도는 횟수:")
-	var numberOfTurns int // count, turns, 등등..
-	_, err = fmt.Scan(&numberOfTurns)
+	var turns int
+	_, err = fmt.Scan(&turns)
 	if err != nil {
 		return nil, 0, err
 	}
-	if numberOfTurns <= 0 {
-		return nil, 0, errors.New("numberOfTurns cannot be less than or equal to zero")
+	if turns <= 0 {
+		return nil, 0, errors.New("turns cannot be less than or equal to zero")
 	}
 
-	return names, numberOfTurns, err
+	return names, turns, err
 }
 
-func inputName(name string) ([]string, error) { //시그니쳐를 생각해서 바꿔보기
-	names := strings.Split(name, ",")
+func getNamesByInput(input string) ([]string, error) { //시그니쳐를 생각해서 바꿔보기
+	names := strings.Split(input, ",")
 
 	for i := 0; i < len(names); i++ {
 		if checkErr := checkName(string(names[i])); checkErr != "" { // 에러를 바로 반환하도록 수정
@@ -47,7 +47,7 @@ func checkName(name string) string {
 	case 10 < len(name):
 		return "name must be less than or equal to 10"
 	}
-	if matched, _ := regexp.MatchString(`[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z]`, name); matched {
+	if matched, _ := regexp.MatchString(`[^a-zA-Z]`, name); matched {
 		return "name must be korean or english"
 	}
 	return ""
