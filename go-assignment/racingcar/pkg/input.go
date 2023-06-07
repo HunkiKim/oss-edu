@@ -7,57 +7,48 @@ import (
 	"strings"
 )
 
-var re, _ = regexp.Compile(`[^a-zA-Z]`)
-
-func InputNames() ([]string, error) {
-	var names string
-
+func InputAll() ([]string, int, error) { // Init or Input (All)
+	var name string
 	fmt.Print("이름:")
-	_, err := fmt.Scan(&names)
+	fmt.Scan(&name)
+	names, err := inputName(name)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-
-	convertedNames, err := convertSlice(names)
-	if err != nil {
-		return nil, err
-	}
-	return convertedNames, nil
-}
-
-func InputTurns() (int, error) {
-	var turns int
 
 	fmt.Print("도는 횟수:")
-	_, err := fmt.Scan(&turns)
+	var numberOfTurns int // count, turns, 등등..
+	_, err = fmt.Scan(&numberOfTurns)
 	if err != nil {
-		return 0, err
+		return nil, 0, err
 	}
-	if turns < 1 {
-		return 0, errors.New("turns cannot be less than one")
+	if numberOfTurns <= 0 {
+		return nil, 0, errors.New("numberOfTurns cannot be less than or equal to zero")
 	}
-	return turns, err
+
+	return names, numberOfTurns, err
 }
 
-func convertSlice(input string) ([]string, error) {
-	names := strings.Split(input, ",")
+func inputName(name string) ([]string, error) { //시그니쳐를 생각해서 바꿔보기
+	names := strings.Split(name, ",")
 
-	if err := verify(names); err != nil {
-		return nil, err
+	for i := 0; i < len(names); i++ {
+		if checkErr := checkName(string(names[i])); checkErr != "" { // 에러를 바로 반환하도록 수정
+			return nil, errors.New(checkErr)
+		}
 	}
 	return names, nil
 }
 
-func verify(names []string) error {
-	for _, name := range names {
-		switch {
-		case 1 > len(name):
-			return errors.New("name must be greater than or equal to 1")
-		case 10 < len(name):
-			return errors.New("name must be less than or equal to 10")
-		case re.MatchString(name):
-			return errors.New("name must be english")
-		}
+func checkName(name string) string {
+	switch {
+	case 1 > len(name):
+		return "name must be greater than or equal to 1"
+	case 10 < len(name):
+		return "name must be less than or equal to 10"
 	}
-	return nil
+	if matched, _ := regexp.MatchString(`[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z]`, name); matched {
+		return "name must be korean or english"
+	}
+	return ""
 }

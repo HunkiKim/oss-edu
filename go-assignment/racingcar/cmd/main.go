@@ -6,19 +6,12 @@ import (
 )
 
 func main() {
-	names, err := pkg.InputNames()
+	names, numberOfTurns, err := pkg.InputAll()
 	if err != nil {
-		log.Fatalf("이름 입력 에러: %v", err)
+		log.Fatalf("실패 %v", err) // 다시확인
 	}
 
-	turns, err := pkg.InputTurns()
-	if err != nil {
-		log.Fatalf("도는 횟수 입력 에러: %v", err)
-	}
-
-	users := pkg.CreateUsers(names)
-
-	pkg.DoRace(users, turns)
+	users := pkg.CountNumberOfTurns(names, numberOfTurns) // numberOfTurns 이름 바꾸기
 
 	pkg.PrintRank(users)
 }

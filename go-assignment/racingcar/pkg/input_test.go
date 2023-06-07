@@ -5,44 +5,29 @@ import (
 	"testing"
 )
 
-func Test_inputName(t *testing.T) {
+func Test_inputName(t *testing.T) { //Example_ prefix찾아보기
 	data := []struct {
 		testName string
 		name     string
 		expected []string
 		errMsg   string
 	}{
-		{
-			testName: "정상 테스트",
-			name:     "hunki,hunkis,hunkiss",
-			expected: []string{"hunki", "hunkis", "hunkiss"},
-		},
-		{
-			testName: "경계값 0 테스트",
-			name:     "hunki,,",
-			errMsg:   "name must be greater than or equal to 1",
-		},
-		{
-			testName: "경계값 11 테스트",
-			name:     "hunkihunkih",
-			errMsg:   "name must be less than or equal to 10",
-		},
-		{
-			testName: "영어 이외 테스트",
-			name:     "hun1",
-			errMsg:   "name must be english",
-		},
+		{"정상 테스트", "hunki,hunkis,hunkiss", []string{"hunki", "hunkis", "hunkiss"}, ""},
+		{"경계값 0 테스트", "hunki,,", nil, "name must be greater than or equal to 1"},
+		{"경계값 11 테스트", "hunkihunkih", nil, "name must be less than or equal to 10"},
+		{"한글영어 이외 테스트", "hun1", nil, "name must be korean or english"},
 	}
 
 	for _, d := range data {
 		t.Run(d.testName, func(t *testing.T) {
-			result, err := convertSlice(d.name)
-			if err != nil && err.Error() != d.errMsg {
+			result, err := inputName(d.name)
+			if err.Error() != d.errMsg {
 				t.Errorf("Expected error message %s, got %s", d.errMsg, err.Error())
 			}
 			if diff := cmp.Diff(result, d.expected); diff != "" {
 				t.Errorf(diff)
 			}
+
 		})
 	}
 }

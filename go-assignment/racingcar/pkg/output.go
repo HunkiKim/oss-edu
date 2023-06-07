@@ -1,49 +1,33 @@
 package pkg
 
-import (
-	"fmt"
-	"sort"
-	"strings"
-)
+import "fmt"
 
-const (
-	printingNameLength = 5
-	maxTopUsersNum     = 3
-)
-
-func PrintRank(users []*user) {
-	sortUsers(users)
-
-	min := func(x, y int) int {
-		if x > y {
-			return y
-		}
-		return x
-	}
-	topUsers := users[:min(maxTopUsersNum, len(users))]
-	for _, user := range topUsers {
-		fmt.Printf("%s:%s\n", parseNameByLength(user), strings.Repeat("-", user.numberOfTurns))
+func PrintRank(users []User) {
+	for i := 0; i < calculateMin(3, len(users)); i++ { // 3이 아니라 나중에 입력받아서 처리하도록
+		fmt.Println(printName(&users[i]) + printNumberOfTurns(users[i]))
+		//fmt.Sprintf() // 이걸로 수정한번해보기
+		// 리플렉션 최대한 쓰지 말기
 	}
 }
 
-func sortUsers(users []*user) {
-	sort.Slice(users, func(i, j int) bool {
-		switch {
-		case users[i].numberOfTurns > users[j].numberOfTurns:
-			return true
-		case users[i].numberOfTurns < users[j].numberOfTurns:
-			return false
-		case users[i].name < users[j].name:
-			return true
-		default:
-			return false
-		}
-	})
+func calculateMin(x int, y int) int {
+	if x > y {
+		return y
+	}
+	return x
 }
 
-func parseNameByLength(user *user) string {
-	if len(user.name) < printingNameLength+1 {
-		return user.name + strings.Repeat(" ", printingNameLength-len(user.name))
+func printName(user *User) string { // 복사 비용 줄이려면 포인터로 주소 전달하기
+	if len(user.name) <= 5 {
+		return user.name + ":"
 	}
-	return user.name[:printingNameLength]
+	return user.name[:5] + ":"
+}
+
+func printNumberOfTurns(user User) string {
+	var answer string
+	for i := 0; i < user.numberOfTurns; i++ {
+		answer += "-"
+	}
+	return answer
 }
