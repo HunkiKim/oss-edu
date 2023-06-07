@@ -10,11 +10,11 @@ type User struct {
 	numberOfTurns int
 }
 
-func CountNumberOfTurns(names []string, numberOfTurns int) []User { // 이름 수정
+func DoRace(names []string, turns int) []User {
 	users := createUsers(names)
 
 	for idx := range users {
-		users[idx].countNumberOfTurns(numberOfTurns)
+		users[idx].countNumberOfTurns(turns)
 	}
 
 	sort.Slice(users, func(i, j int) bool {
@@ -37,15 +37,14 @@ func createUsers(names []string) []User {
 	var duplicatedMap = map[string]bool{}
 
 	for _, name := range names { // 일급함수로 바꿔보기
-		if duplicatedMap[name] {
-			continue
-		}
-		duplicatedMap[name] = true
+		if !duplicatedMap[name] {
+			duplicatedMap[name] = true
 
-		users = append(users, User{
-			name:          name,
-			numberOfTurns: 0,
-		})
+			users = append(users, User{
+				name:          name,
+				numberOfTurns: 0,
+			})
+		}
 	}
 
 	return users

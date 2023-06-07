@@ -20,7 +20,7 @@ func Test_inputName(t *testing.T) { //Example_ prefix찾아보기
 
 	for _, d := range data {
 		t.Run(d.testName, func(t *testing.T) {
-			result, err := inputName(d.name)
+			result, err := getNamesByInput(d.name)
 			if err.Error() != d.errMsg {
 				t.Errorf("Expected error message %s, got %s", d.errMsg, err.Error())
 			}
