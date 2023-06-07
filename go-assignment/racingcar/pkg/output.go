@@ -5,10 +5,12 @@ import (
 	"strings"
 )
 
+const printingNameLength = 5
+
 func PrintRank(users []*User) {
 	topMinUsersNum := calculateMin(3, len(users))
-	for i := 0; i < topMinUsersNum; i++ { // 3이 아니라 나중에 입력받아서 처리하도록 변경 예정
-		fmt.Printf("%s:%s\n", parseFiveLengthName(users[i]), parseDashByNumberOfTurns(users[i]))
+	for _, user := range users[:topMinUsersNum] {
+		fmt.Printf("%s:%s\n", parseNameByLength(user, printingNameLength), parseDashByNumberOfTurns(user))
 	}
 }
 
@@ -19,9 +21,9 @@ func calculateMin(x int, y int) int {
 	return x
 }
 
-func parseFiveLengthName(user *User) string {
-	if len(user.name) <= 5 {
-		return user.name + strings.Repeat(" ", 5-len(user.name))
+func parseNameByLength(user *User, length int) string {
+	if len(user.name) < length+1 {
+		return user.name + strings.Repeat(" ", length-len(user.name))
 	}
 	return user.name[:5]
 }

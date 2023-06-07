@@ -8,12 +8,14 @@ import (
 func main() {
 	userNames, turns, err := pkg.InputAll()
 	if err != nil {
-		log.Fatalf("실패 %v", err) // 다시확인
+		log.Fatalf("실패 %v", err)
 	}
 
 	users := pkg.CreateUsers(userNames)
 
-	racedUsers := pkg.DoRace(users, turns)
+	pkg.DoRace(users, turns)
 
-	pkg.PrintRank(racedUsers)
+	pkg.SortUsers(users)
+
+	pkg.PrintRank(users)
 }
