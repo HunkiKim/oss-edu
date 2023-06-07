@@ -6,12 +6,14 @@ import (
 )
 
 func main() {
-	names, turns, err := pkg.InputAll()
+	userNames, turns, err := pkg.InputAll()
 	if err != nil {
-		log.Fatalf("실패 %v", err)
+		log.Fatalf("실패 %v", err) // 다시확인
 	}
 
-	users := pkg.DoRace(names, turns)
+	users := pkg.CreateUsers(userNames)
 
-	pkg.PrintRank(users)
+	racedUsers := pkg.DoRace(users, turns)
+
+	pkg.PrintRank(racedUsers)
 }
