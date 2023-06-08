@@ -9,29 +9,33 @@ import (
 
 var re, _ = regexp.Compile(`[^a-zA-Z]`)
 
-func InputAll() ([]string, int, error) {
-	var input string
+func InputNames() ([]string, error) {
+	var names string
+
 	fmt.Print("이름:")
-	fmt.Scan(&input)
-	names, err := getNamesByInput(input)
+	fmt.Scan(&names)
+	convertedNames, err := convertSlice(names)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-
-	var turns int
-	fmt.Print("도는 횟수:")
-	_, err = fmt.Scan(&turns)
-	if err != nil {
-		return nil, 0, err
-	}
-	if turns < 1 {
-		return nil, 0, errors.New("turns cannot be less than one")
-	}
-
-	return names, turns, err
+	return convertedNames, nil
 }
 
-func getNamesByInput(input string) ([]string, error) {
+func InputTurns() (int, error) {
+	var turns int
+
+	fmt.Print("도는 횟수:")
+	_, err := fmt.Scan(&turns)
+	if err != nil {
+		return 0, err
+	}
+	if turns < 1 {
+		return 0, errors.New("turns cannot be less than one")
+	}
+	return turns, err
+}
+
+func convertSlice(input string) ([]string, error) {
 	names := strings.Split(input, ",")
 
 	if err := check(names); err != nil {
@@ -49,8 +53,6 @@ func check(names []string) error {
 			return errors.New("name must be less than or equal to 10")
 		case re.MatchString(name):
 			return errors.New("name must be english")
-		default:
-			return nil
 		}
 	}
 	return nil

@@ -36,7 +36,7 @@ func Test_inputName(t *testing.T) {
 
 	for _, d := range data {
 		t.Run(d.testName, func(t *testing.T) {
-			result, err := getNamesByInput(d.name)
+			result, err := convertSlice(d.name)
 			if err != nil && err.Error() != d.errMsg {
 				t.Errorf("Expected error message %s, got %s", d.errMsg, err.Error())
 			}
