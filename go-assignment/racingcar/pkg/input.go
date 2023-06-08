@@ -16,8 +16,8 @@ func InputAll() ([]string, int, error) {
 		return nil, 0, err
 	}
 
-	fmt.Print("도는 횟수:")
 	var turns int
+	fmt.Print("도는 횟수:")
 	_, err = fmt.Scan(&turns)
 	if err != nil {
 		return nil, 0, err
@@ -41,13 +41,15 @@ func getNamesByInput(input string) ([]string, error) {
 }
 
 func checkName(name string) error {
-	switch matched, _ := regexp.MatchString(`[^a-zA-Z]`, name); {
+	matched, _ := regexp.MatchString(`[^a-zA-Z]`, name)
+
+	switch {
 	case 1 > len(name):
 		return errors.New("name must be greater than or equal to 1")
 	case 10 < len(name):
 		return errors.New("name must be less than or equal to 10")
 	case matched:
-		return errors.New("name must be korean or english")
+		return errors.New("name must be english")
 	default:
 		return nil
 	}

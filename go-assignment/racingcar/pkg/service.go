@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"math/rand"
-	"sort"
 )
 
 type User struct {
@@ -32,21 +31,6 @@ func CreateUsers(names []string) []*User {
 	}
 
 	return users
-}
-
-func SortUsers(users []*User) {
-	sort.Slice(users, func(i, j int) bool {
-		switch {
-		case users[i].numberOfTurns > users[j].numberOfTurns:
-			return true
-		case users[i].numberOfTurns < users[j].numberOfTurns:
-			return false
-		case users[i].name < users[j].name:
-			return true
-		default:
-			return false
-		}
-	})
 }
 
 func (user *User) countNumberOfTurns(turns int) {
