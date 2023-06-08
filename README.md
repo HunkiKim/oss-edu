@@ -1,5 +1,5 @@
-# 정보
-Mantech 신입사원 교육 자료들을 모아놓는 Repository 입니다.
+# k8s
+- 책 정리 후 PR을 통해 리뷰
 
 # Go
 ## Racing Car
