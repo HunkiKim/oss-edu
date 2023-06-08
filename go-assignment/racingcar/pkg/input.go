@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var re, _ = regexp.Compile(`[^a-zA-Z]`)
+
 func InputAll() ([]string, int, error) {
 	var input string
 	fmt.Print("이름:")
@@ -32,25 +34,24 @@ func InputAll() ([]string, int, error) {
 func getNamesByInput(input string) ([]string, error) {
 	names := strings.Split(input, ",")
 
-	for _, name := range names {
-		if err := checkName(name); err != nil {
-			return nil, err
-		}
+	if err := check(names); err != nil {
+		return nil, err
 	}
 	return names, nil
 }
 
-func checkName(name string) error {
-	matched, _ := regexp.MatchString(`[^a-zA-Z]`, name)
-
-	switch {
-	case 1 > len(name):
-		return errors.New("name must be greater than or equal to 1")
-	case 10 < len(name):
-		return errors.New("name must be less than or equal to 10")
-	case matched:
-		return errors.New("name must be english")
-	default:
-		return nil
+func check(names []string) error {
+	for _, name := range names {
+		switch {
+		case 1 > len(name):
+			return errors.New("name must be greater than or equal to 1")
+		case 10 < len(name):
+			return errors.New("name must be less than or equal to 10")
+		case re.MatchString(name):
+			return errors.New("name must be english")
+		default:
+			return nil
+		}
 	}
+	return nil
 }

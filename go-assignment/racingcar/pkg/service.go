@@ -4,35 +4,34 @@ import (
 	"math/rand"
 )
 
-type User struct {
+type user struct {
 	name          string
 	numberOfTurns int
 }
 
-func DoRace(users []*User, turns int) {
+func (user *user) countNumberOfTurns(turns int) {
+	user.numberOfTurns = rand.Intn(turns + 1)
+}
+
+func DoRace(users []*user, turns int) {
 	for _, user := range users {
 		user.countNumberOfTurns(turns)
 	}
 }
 
-func CreateUsers(names []string) []*User {
-	users := make([]*User, 0, len(names))
-	var duplicatedMap = map[string]bool{}
+func CreateUsers(names []string) []*user {
+	users := make([]*user, 0, len(names))
+	var duplicated = map[string]bool{}
 
 	for _, name := range names {
-		if !duplicatedMap[name] {
-			duplicatedMap[name] = true
+		if !duplicated[name] {
+			duplicated[name] = true
 
-			users = append(users, &User{
+			users = append(users, &user{
 				name:          name,
 				numberOfTurns: 0,
 			})
 		}
 	}
-
 	return users
-}
-
-func (user *User) countNumberOfTurns(turns int) {
-	user.numberOfTurns = rand.Intn(turns + 1)
 }

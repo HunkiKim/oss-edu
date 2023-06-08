@@ -12,10 +12,26 @@ func Test_inputName(t *testing.T) {
 		expected []string
 		errMsg   string
 	}{
-		{"정상 테스트", "hunki,hunkis,hunkiss", []string{"hunki", "hunkis", "hunkiss"}, ""},
-		{"경계값 0 테스트", "hunki,,", nil, "name must be greater than or equal to 1"},
-		{"경계값 11 테스트", "hunkihunkih", nil, "name must be less than or equal to 10"},
-		{"영어 이외 테스트", "hun1", nil, "name must be english"},
+		{
+			testName: "정상 테스트",
+			name:     "hunki,hunkis,hunkiss",
+			expected: []string{"hunki", "hunkis", "hunkiss"},
+		},
+		{
+			testName: "경계값 0 테스트",
+			name:     "hunki,,",
+			errMsg:   "name must be greater than or equal to 1",
+		},
+		{
+			testName: "경계값 11 테스트",
+			name:     "hunkihunkih",
+			errMsg:   "name must be less than or equal to 10",
+		},
+		{
+			testName: "영어 이외 테스트",
+			name:     "hun1",
+			errMsg:   "name must be english",
+		},
 	}
 
 	for _, d := range data {

@@ -6,18 +6,27 @@ import (
 	"strings"
 )
 
-const printingNameLength = 5
+const (
+	printingNameLength = 6
+	maxTopUsersNum     = 3
+)
 
-func PrintRank(users []*User) {
+func PrintRank(users []*user) {
 	sortUsers(users)
 
-	topMinUsersNum := calculateMin(3, len(users))
-	for _, user := range users[:topMinUsersNum] {
-		fmt.Printf("%s:%s\n", parseNameByLength(user, printingNameLength), parseDashByNumberOfTurns(user))
+	var topUsersNum = func(x int, y int) int {
+		if x > y {
+			return y
+		}
+		return x
+	}(maxTopUsersNum, len(users))
+	topUsers := users[:topUsersNum]
+	for _, user := range topUsers {
+		fmt.Printf("%s:%s\n", parseNameByLength(user), strings.Repeat("-", user.numberOfTurns))
 	}
 }
 
-func sortUsers(users []*User) {
+func sortUsers(users []*user) {
 	sort.Slice(users, func(i, j int) bool {
 		switch {
 		case users[i].numberOfTurns > users[j].numberOfTurns:
@@ -31,20 +40,10 @@ func sortUsers(users []*User) {
 		}
 	})
 }
-func calculateMin(x int, y int) int {
-	if x > y {
-		return y
-	}
-	return x
-}
 
-func parseNameByLength(user *User, length int) string {
-	if len(user.name) < length+1 {
-		return user.name + strings.Repeat(" ", length-len(user.name))
+func parseNameByLength(user *user) string {
+	if len(user.name) < printingNameLength {
+		return user.name + strings.Repeat(" ", printingNameLength-len(user.name)-1)
 	}
 	return user.name[:5]
-}
-
-func parseDashByNumberOfTurns(user *User) string {
-	return strings.Repeat("-", user.numberOfTurns)
 }
