@@ -15,7 +15,7 @@ func Test_inputName(t *testing.T) {
 		{"정상 테스트", "hunki,hunkis,hunkiss", []string{"hunki", "hunkis", "hunkiss"}, ""},
 		{"경계값 0 테스트", "hunki,,", nil, "name must be greater than or equal to 1"},
 		{"경계값 11 테스트", "hunkihunkih", nil, "name must be less than or equal to 10"},
-		{"한글영어 이외 테스트", "hun1", nil, "name must be korean or english"},
+		{"영어 이외 테스트", "hun1", nil, "name must be english"},
 	}
 
 	for _, d := range data {
