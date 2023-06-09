@@ -7,20 +7,20 @@ import (
 )
 
 const (
-	printingNameLength = 6
+	printingNameLength = 5
 	maxTopUsersNum     = 3
 )
 
 func PrintRank(users []*user) {
 	sortUsers(users)
 
-	var topUsersNum = func(x int, y int) int {
+	var min = func(x, y int) int {
 		if x > y {
 			return y
 		}
 		return x
-	}(maxTopUsersNum, len(users))
-	topUsers := users[:topUsersNum]
+	}
+	topUsers := users[:min(maxTopUsersNum, len(users))]
 	for _, user := range topUsers {
 		fmt.Printf("%s:%s\n", parseNameByLength(user), strings.Repeat("-", user.numberOfTurns))
 	}
@@ -42,8 +42,8 @@ func sortUsers(users []*user) {
 }
 
 func parseNameByLength(user *user) string {
-	if len(user.name) < printingNameLength {
-		return user.name + strings.Repeat(" ", printingNameLength-len(user.name)-1)
+	if len(user.name) < printingNameLength+1 {
+		return user.name + strings.Repeat(" ", printingNameLength-len(user.name))
 	}
-	return user.name[:5]
+	return user.name[:printingNameLength]
 }

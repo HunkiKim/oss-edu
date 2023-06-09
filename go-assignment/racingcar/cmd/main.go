@@ -7,20 +7,18 @@ import (
 
 func main() {
 	names, err := pkg.InputNames()
-	check(err)
+	if err != nil {
+		log.Fatalf("이름 입력 에러: %v", err)
+	}
 
 	turns, err := pkg.InputTurns()
-	check(err)
+	if err != nil {
+		log.Fatalf("도는 횟수 입력 에러: %v", err)
+	}
 
 	users := pkg.CreateUsers(names)
 
 	pkg.DoRace(users, turns)
 
 	pkg.PrintRank(users)
-}
-
-func check(err error) {
-	if err != nil {
-		log.Fatalf("실패 %v", err)
-	}
 }

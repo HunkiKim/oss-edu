@@ -13,7 +13,11 @@ func InputNames() ([]string, error) {
 	var names string
 
 	fmt.Print("이름:")
-	fmt.Scan(&names)
+	_, err := fmt.Scan(&names)
+	if err != nil {
+		return nil, err
+	}
+
 	convertedNames, err := convertSlice(names)
 	if err != nil {
 		return nil, err
@@ -38,13 +42,13 @@ func InputTurns() (int, error) {
 func convertSlice(input string) ([]string, error) {
 	names := strings.Split(input, ",")
 
-	if err := check(names); err != nil {
+	if err := verify(names); err != nil {
 		return nil, err
 	}
 	return names, nil
 }
 
-func check(names []string) error {
+func verify(names []string) error {
 	for _, name := range names {
 		switch {
 		case 1 > len(name):
