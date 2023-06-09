@@ -9,13 +9,13 @@ type user struct {
 	numberOfTurns int
 }
 
-func (user *user) update(turns int) {
+func (user *user) updateNumberOfTurns(turns int) {
 	user.numberOfTurns = rand.Intn(turns + 1)
 }
 
 func DoRace(users []*user, turns int) {
 	for _, user := range users {
-		user.update(turns)
+		user.updateNumberOfTurns(turns)
 	}
 }
 

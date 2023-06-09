@@ -14,7 +14,7 @@ const (
 func PrintRank(users []*user) {
 	sortUsers(users)
 
-	var min = func(x, y int) int {
+	min := func(x, y int) int {
 		if x > y {
 			return y
 		}
