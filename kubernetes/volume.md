@@ -130,11 +130,6 @@ volumes:
     emptyDir: 
       medium: memory # Volume의 저장소 유형을 선택하는 필드
 ```
-## git repository를 볼륨으로 사용하기
-- gitRepo 볼륨은 기본적으로 emptyDir 볼륨이며 파드가 시작되면 깃 리포지터리를 복제하고 특정 리비전을 체크아웃해 데이터로 채운다.
-- 하지만 gitRepo에 변경을 푸시할 때마다 웹사이트의 새 버전을 서비스하기 위해선 파드를 삭제해줘야 한다.
-  - 볼륨이 항상 깃 레포지터리와 동기화하도록 추가 프로세스가 가능하다.
-    - 사이드카 컨테이너: 파드 내의 도움 컨테이너인 사이드카 컨테이너를 실행하여 주 컨테이너의 동작을 보완할 수 있다. 사이드카 컨테이너가 주기적으로 gitRepo를 확인해 볼륨을 마운트 할 수 있다.
 
 # 워커 노드 파일시스템의 파일 접근
 - 대부분의 파드는 호스트 노드를 인식하지 못하므로 노드의 파일시스템에 있는 어떤 파일에도 접근하면 안 된다.
@@ -155,24 +150,8 @@ volumes:
 ```shell
 $ k get pods --namespace kube-system
 ```
-```shell
-k get pods --namespace kube-system
-NAME                                      READY   STATUS      RESTARTS   AGE
-local-path-provisioner-79f67d76f8-xr5hm   1/1     Running     0          3d11h
-coredns-597584b69b-rl6zs                  1/1     Running     0          3d11h
-metrics-server-5f9f776df5-tvs78           1/1     Running     0          3d11h
-helm-install-traefik-crd-dl4h5            0/1     Completed   0          3d11h
-helm-install-traefik-zgkz9                0/1     Completed   2          3d11h
-svclb-traefik-95360656-x9qd5              2/2     Running     0          3d11h
-svclb-traefik-95360656-79n2v              2/2     Running     0          3d11h
-svclb-traefik-95360656-2nkvq              2/2     Running     0          3d11h
-svclb-traefik-95360656-hfngw              2/2     Running     0          3d11h
-svclb-traefik-95360656-7tkzx              2/2     Running     0          3d11h
-traefik-66c46d954f-qtdnc                  1/1     Running     0          3d11h
-```
-- 위의 pod들의 경우엔 configmap이 주된 볼륨을 사용한다.
-  - 만약 hostPath가 있더라도 자체 데이터를 저장하기 위해 사용하는 경우는 없다.
-  - Minikube와 같은 단일 클러스터, 단일 노드 인 경우엔 어쩔수없이 테스트용으로 종종 사용한다.
+
+- Minikube와 같은 단일 클러스터, 단일 노드 인 경우엔 어쩔수없이 테스트용으로 종종 사용한다.
 
 # 퍼시스턴트 스토리지 사용
 - 파드에서 실행 중인 애플리케이션이 디스크에 데이터를 유지해야 하고 파드가 다른 노드로 재스케줄링된 경우에도 동일한 데이터를 사용해야 한다면 지금까지 사용한 hostPath, emptyDir은 사용할 수 없다.
@@ -259,7 +238,7 @@ spec:
 - PV는 노드와 같은 클러스터 수준 리소스이다.
   - PV는 클러스터 수준 리소스이기 때문에 특정 네임스페이스에 속하지 않는다. 
 
-## PVC 생성을 통한 PV 요청
+## PV - PVC 바인딩
 - PV가 필요한 파드를 배포해보자.
 - 파드에 직접 사용할 수 없고 클레임을 해야한다.
 - 파드가 재스케줄링 되어도 동일한 PVC가 사용 가능한 상태로 유지되기를 원하므로 PV에 대한 클레임은 파드를 생성하는 것과 별개의 프로세스다.
@@ -286,7 +265,7 @@ NAME          STATUS   VOLUME       CAPACITY   ACCESS MODES   STORAGECLASS    AG
 mongodb-pvc   Bound    mongodb-pv   2Gi        RWO            local-storage   90s
 ```
 
-## 파드에서 PVC 사용하기
+## 파드에서 볼륨 사용하기
 - PV는 사용중에 있다. 볼륨을 해제할 때까지 다른 사용자는 동일한 볼륨에 클레임 할 수 없다.
 - PV가 아니라 Pod는 PVC를 참조한다.
 ```yaml
