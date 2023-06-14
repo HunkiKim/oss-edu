@@ -8,12 +8,12 @@ import (
 
 type CliOutput struct{}
 
-func (co CliOutput) PrintRank(users []*pkg.User) {
+func (co CliOutput) PrintRank(users []*pkg.User) error {
 	sortUsers(users)
 
 	winners, err := parseWinners(users)
 	if err != nil {
-		return
+		return err
 	}
 	co.printWinners(winners)
 
@@ -22,6 +22,8 @@ func (co CliOutput) PrintRank(users []*pkg.User) {
 	for idx, user := range topUsers {
 		fmt.Printf("(%d등)%s:%s\n", idx+1, parseNameByLength(user), strings.Repeat("-", user.NumberOfTurns))
 	}
+
+	return nil
 }
 
 func (co CliOutput) printWinners(winners []pkg.User) {

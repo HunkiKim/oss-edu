@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/spf13/cobra"
 	"log"
 	"racing-car/racingcar/pkg"
@@ -46,17 +47,17 @@ func startRacing(f *racingFlags) error {
 
 	createdInput, err := input.CreateInput(ioType)
 	if err != nil {
-		log.Fatalf("입출력 선택 에러: %v", err)
+		return fmt.Errorf("입출력 선택 에러: %v", err)
 	}
 
 	names, err := createdInput.InputNames()
 	if err != nil {
-		log.Fatalf("이름 입력 에러: %v", err)
+		return fmt.Errorf("이름 입력 에러: %v", err)
 	}
 
 	turns, err := createdInput.InputTurns()
 	if err != nil {
-		log.Fatalf("도는 횟수 입력 에러: %v", err)
+		return fmt.Errorf("도는 횟수 입력 에러: %v", err)
 	}
 
 	users := pkg.CreateUsers(names)
@@ -65,11 +66,14 @@ func startRacing(f *racingFlags) error {
 
 	createOutput, err := output.CreateOutput(ioType)
 	if err != nil {
-		return err
+		return fmt.Errorf("output 생성 에러: %v", err)
 	}
 
 	output.MaxRank = f.maxRank
-	createOutput.PrintRank(users)
+	err = createOutput.PrintRank(users)
+	if err != nil {
+		return fmt.Errorf("출력 에러: %v", err)
+	}
 
 	return nil
 }

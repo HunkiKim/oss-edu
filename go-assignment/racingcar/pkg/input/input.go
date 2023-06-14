@@ -2,7 +2,6 @@ package input
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -27,36 +26,14 @@ func CreateInput(ioType pkg.IoType) (Input, error) {
 		return CliInput{}, nil
 	case pkg.File == ioType:
 		fmt.Print("파일경로: ")
-		var filePath string
-		_, err := fmt.Scan(&filePath)
+		texts, err := readFile()
 		if err != nil {
 			return nil, err
-		}
-
-		file, err := os.ReadFile(filePath)
-		if err != nil {
-			return nil, err
-		}
-
-		texts := strings.Split(string(file), "\n")
-		switch {
-		case len(texts) > 2:
-			return nil, errors.New("file line exceeded two lines")
-		case len(texts) < 2:
-			return nil, errors.New("file line is less than two lines")
 		}
 		return FileInput{texts: texts}, nil
 	case pkg.Json == ioType:
 		fmt.Print("입력:")
-		var input []byte
-		input, _, err := reader.ReadLine()
-		if err != nil {
-			fmt.Println("입력 에러:", err)
-			return nil, err
-		}
-
-		var jsonInput JsonInput
-		err = json.Unmarshal([]byte(input), &jsonInput)
+		jsonInput, err := inputJsonFormat()
 		if err != nil {
 			return nil, err
 		}
@@ -70,10 +47,22 @@ func CreateInput(ioType pkg.IoType) (Input, error) {
 func convertSlice(input string) ([]string, error) {
 	names := strings.Split(input, ",")
 
+	names = deleteZeroString(names)
+
 	if err := verify(names); err != nil {
 		return nil, err
 	}
 	return names, nil
+}
+
+func deleteZeroString(names []string) []string {
+	newNames := make([]string, 0, len(names))
+	for _, name := range names {
+		if name != "" {
+			newNames = append(newNames, name)
+		}
+	}
+	return newNames
 }
 
 func verify(names []string) error {

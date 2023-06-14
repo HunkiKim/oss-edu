@@ -13,7 +13,7 @@ const (
 )
 
 type Output interface {
-	PrintRank([]*pkg.User)
+	PrintRank([]*pkg.User) error
 }
 
 var MaxRank int

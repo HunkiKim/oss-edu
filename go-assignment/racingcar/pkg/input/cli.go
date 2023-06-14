@@ -26,7 +26,7 @@ func (ci CliInput) InputNames() ([]string, error) {
 func (ci CliInput) InputTurns() (int, error) {
 	var turns int
 
-	fmt.Print("도는 횟수:")
+	fmt.Print("주행 횟수:")
 	_, err := fmt.Scan(&turns)
 	if err != nil {
 		return 0, err

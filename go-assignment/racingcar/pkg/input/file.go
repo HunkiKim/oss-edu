@@ -2,6 +2,8 @@ package input
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -16,6 +18,29 @@ const (
 	nameIdx     = 0
 	turnsIdx    = 1
 )
+
+func readFile() ([]string, error) {
+	var filePath string
+	_, err := fmt.Scan(&filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	texts := strings.Split(string(file), "\n")
+	switch {
+	case len(texts) > 2:
+		return nil, errors.New("file line exceeded two lines")
+	case len(texts) < 2:
+		return nil, errors.New("file line is less than two lines")
+	}
+
+	return texts, nil
+}
 
 func (fi FileInput) InputNames() ([]string, error) {
 	names, err := parseName(fi.texts[nameIdx])
