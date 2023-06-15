@@ -32,7 +32,7 @@ func InitRacingCmd() *cobra.Command {
 	return rootCmd
 }
 
-func startRacing(f *racingFlags) error {
+func startApplication(f *racingFlags) error {
 	reader, err := util.NewReader(f.format)
 	if err != nil {
 		return err
@@ -61,9 +61,7 @@ func startRacing(f *racingFlags) error {
 	if err != nil {
 		return err
 	}
-
 	topUsers := users[:min(f.maxRank, len(users))]
-
 	if err = writer.Write(winners, topUsers); err != nil {
 		return err
 	}
