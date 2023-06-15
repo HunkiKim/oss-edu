@@ -1,13 +1,13 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
 	"log"
+	"sort"
+
 	"racing-car/racingcar/pkg"
-	"racing-car/racingcar/pkg/input"
-	"racing-car/racingcar/pkg/output"
+	"racing-car/racingcar/pkg/user"
+	"racing-car/racingcar/pkg/util"
 )
 
 type racingFlags struct {
@@ -33,49 +33,78 @@ func InitRacingCmd() *cobra.Command {
 }
 
 func startRacing(f *racingFlags) error {
-	var ioType pkg.IoType
-	switch f.format {
-	case "Command":
-		ioType = pkg.Cli
-	case "File":
-		ioType = pkg.File
-	case "Json":
-		ioType = pkg.Json
-	default:
-		return errors.New("잘못된 파일 형식")
-	}
-
-	createdInput, err := input.CreateInput(ioType)
+	reader, err := util.NewReader(f.format)
 	if err != nil {
-		return fmt.Errorf("입출력 선택 에러: %v", err)
+		return err
 	}
 
-	names, err := createdInput.InputNames()
+	names, turns, err := reader.Read()
 	if err != nil {
-		return fmt.Errorf("이름 입력 에러: %v", err)
+		return err
 	}
 
-	turns, err := createdInput.InputTurns()
+	users, err := pkg.CreateUsers(names)
 	if err != nil {
-		return fmt.Errorf("도는 횟수 입력 에러: %v", err)
+		return err
 	}
-
-	users := pkg.CreateUsers(names)
 
 	pkg.DoRace(users, turns)
 
-	createOutput, err := output.CreateOutput(ioType)
+	writer, err := util.NewWriter(f.format)
 	if err != nil {
-		return fmt.Errorf("output 생성 에러: %v", err)
+		return err
 	}
 
-	output.MaxRank = f.maxRank
-	err = createOutput.PrintRank(users)
+	sortUsers(users)
+
+	winners, err := parseWinners(users)
 	if err != nil {
-		return fmt.Errorf("출력 에러: %v", err)
+		return err
+	}
+
+	topUsers := users[:min(f.maxRank, len(users))]
+
+	if err = writer.Write(winners, topUsers); err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func sortUsers(users []*user.User) {
+	sort.Slice(users, func(i, j int) bool {
+		switch {
+		case users[i].NumberOfTurns > users[j].NumberOfTurns:
+			return true
+		case users[i].NumberOfTurns < users[j].NumberOfTurns:
+			return false
+		case users[i].Name < users[j].Name:
+			return true
+		default:
+			return false
+		}
+	})
+}
+
+func parseWinners(sortedUsers []*user.User) ([]*user.User, error) {
+	topTurns := sortedUsers[0].NumberOfTurns
+	cnt := 1
+
+	for _, u := range sortedUsers {
+		if u.NumberOfTurns != topTurns {
+			break
+		}
+		cnt += 1
+	}
+
+	return sortedUsers[:cnt], nil
+}
+
+func min(x, y int) int {
+	if x > y {
+		return y
+	}
+	return x
 }
 
 func main() {
