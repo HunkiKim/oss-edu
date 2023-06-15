@@ -21,7 +21,7 @@ func InitRacingCmd() *cobra.Command {
 		Use:   "racing start",
 		Short: "Racing Car Project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.SilenceUsage = true
+			cmd.SilenceUsage = false
 			return startRacing(flags)
 		},
 	}
