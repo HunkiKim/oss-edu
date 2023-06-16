@@ -42,11 +42,8 @@ func (r *Reader) readFile() ([]string, error) {
 	}
 
 	texts := strings.Split(string(file), "\n")
-	switch {
-	case len(texts) > 2:
-		return nil, errors.New("file line exceeded two lines")
-	case len(texts) < 2:
-		return nil, errors.New("file line is less than two lines")
+	if len(texts) != 2 {
+		return nil, errors.New("file is not two lines")
 	}
 	return texts, nil
 }
