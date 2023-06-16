@@ -4,11 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"racing-car/racingcar/pkg/interfaces"
 	"strconv"
 	"strings"
 )
 
 type Reader struct{}
+
+func NewReader() interfaces.Reader {
+	return &Reader{}
+}
 
 func (r *Reader) Read() (string, int, error) {
 	fmt.Print("파일경로: ")

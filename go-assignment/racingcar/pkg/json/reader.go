@@ -4,10 +4,16 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"os"
+	"racing-car/racingcar/pkg/interfaces"
 )
 
 type Reader struct {
 	*bufio.Reader
+}
+
+func NewReader() interfaces.Reader {
+	return &Reader{bufio.NewReader(os.Stdin)}
 }
 
 type jsonInput struct {

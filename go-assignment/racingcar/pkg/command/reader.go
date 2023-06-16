@@ -3,9 +3,14 @@ package command
 import (
 	"errors"
 	"fmt"
+	"racing-car/racingcar/pkg/interfaces"
 )
 
 type Reader struct{}
+
+func NewReader() interfaces.Reader {
+	return &Reader{}
+}
 
 func (r *Reader) Read() (string, int, error) {
 	names, err := r.inputNames()

@@ -9,7 +9,7 @@ import (
 
 var re, _ = regexp.Compile(`[^a-zA-Z]`)
 
-type User struct {
+type User struct { // 캡슐화
 	Name          string
 	NumberOfTurns int
 }
