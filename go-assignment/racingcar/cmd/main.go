@@ -5,7 +5,6 @@ import (
 	"log"
 	"sort"
 
-	"racing-car/racingcar/pkg"
 	"racing-car/racingcar/pkg/user"
 	"racing-car/racingcar/pkg/util"
 )
@@ -22,7 +21,7 @@ func InitRacingCmd() *cobra.Command {
 		Short: "Racing Car Project",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = false
-			return startRacing(flags)
+			return startApplication(flags)
 		},
 	}
 
@@ -43,12 +42,12 @@ func startApplication(f *racingFlags) error {
 		return err
 	}
 
-	users, err := pkg.CreateUsers(names)
+	users, err := user.CreateUsers(names)
 	if err != nil {
 		return err
 	}
 
-	pkg.DoRace(users, turns)
+	user.DoRace(users, turns)
 
 	writer, err := util.NewWriter(f.format)
 	if err != nil {
