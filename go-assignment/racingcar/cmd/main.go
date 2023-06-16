@@ -1,12 +1,17 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
+	"errors"
 	"log"
 	"sort"
 
+	"github.com/spf13/cobra"
+
+	"racing-car/racingcar/pkg/command"
+	"racing-car/racingcar/pkg/file"
+	"racing-car/racingcar/pkg/interfaces"
+	"racing-car/racingcar/pkg/json"
 	"racing-car/racingcar/pkg/user"
-	"racing-car/racingcar/pkg/util"
 )
 
 type racingFlags struct {
@@ -32,7 +37,7 @@ func InitRacingCmd() *cobra.Command {
 }
 
 func startApplication(f *racingFlags) error {
-	reader, err := util.NewReader(f.format)
+	reader, err := NewReader(f.format)
 	if err != nil {
 		return err
 	}
@@ -49,7 +54,7 @@ func startApplication(f *racingFlags) error {
 
 	user.DoRace(users, turns)
 
-	writer, err := util.NewWriter(f.format)
+	writer, err := NewWriter(f.format, "./result.txt")
 	if err != nil {
 		return err
 	}
@@ -109,5 +114,31 @@ func main() {
 	err := cmd.Execute()
 	if err != nil {
 		log.Fatalf("%v", err)
+	}
+}
+
+func NewReader(format string) (interfaces.Reader, error) {
+	switch format {
+	case "Command":
+		return command.NewReader(), nil
+	case "File":
+		return file.NewReader(), nil
+	case "Json":
+		return json.NewReader(), nil
+	default:
+		return nil, errors.New("wrong format")
+	}
+}
+
+func NewWriter(format, path string) (interfaces.Writer, error) {
+	switch format {
+	case "Command":
+		return command.NewWriter(), nil
+	case "File":
+		return file.NewWriter(path), nil // filepath, 환경변수 외부에서 주입 , 캡슐화 하는 방법 중 하나, 추상화
+	case "Json":
+		return json.NewWriter(), nil
+	default:
+		return nil, errors.New("wrong format")
 	}
 }

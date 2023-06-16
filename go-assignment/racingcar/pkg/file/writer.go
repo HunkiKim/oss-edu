@@ -5,19 +5,24 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"racing-car/racingcar/pkg/interfaces"
 	"strings"
 
 	"racing-car/racingcar/pkg/user"
 )
 
-const filePath = "./result.txt"
+type writer struct {
+	filePath string
+}
 
-type Writer struct{}
+func NewWriter(path string) interfaces.Writer {
+	return &writer{filePath: path}
+}
 
-func (w *Writer) Write(winners, topUsers []*user.User) error {
+func (w *writer) Write(winners, topUsers []*user.User) error {
 	winnersPrint := w.sprintWinners(winners)
 
-	absPath, err := filepath.Abs(filePath)
+	absPath, err := filepath.Abs(w.filePath)
 	if err != nil {
 		return err
 	}
@@ -26,12 +31,12 @@ func (w *Writer) Write(winners, topUsers []*user.User) error {
 	if err != nil {
 		return err
 	}
-	defer func(createdFile *os.File) {
+	defer func() {
 		err = createdFile.Close()
 		if err != nil {
 			log.Fatal("파일 닫기 에러")
 		}
-	}(createdFile)
+	}()
 
 	_, err = fmt.Fprintf(createdFile, winnersPrint)
 	if err != nil {
@@ -50,7 +55,7 @@ func (w *Writer) Write(winners, topUsers []*user.User) error {
 	return nil
 }
 
-func (w *Writer) sprintWinners(winners []*user.User) string {
+func (w *writer) sprintWinners(winners []*user.User) string {
 	result := fmt.Sprint("우승자: ")
 	for _, u := range winners {
 		result += fmt.Sprint(u.Name + " ")
