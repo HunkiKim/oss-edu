@@ -33,7 +33,7 @@ func main() {
 		log.Fatalf("parse url error %v", err)
 	}
 
-	res, err := http.Get(url) // 상태코드 처리 확인하기 // 예제 확인하기
+	res, err := http.Get(url)
 	if err != nil {
 		log.Fatalf("response err %v", err)
 	}
