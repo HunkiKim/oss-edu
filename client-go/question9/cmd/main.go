@@ -26,12 +26,12 @@ type Metadata struct {
 	Namespace string `json:"namespace"`
 }
 
-const proxyUrl = "http://127.0.0.1:8001/"
-
 func main() {
+	proxyUrl := "http://127.0.0.1:8001/"
+
 	args := os.Args
 
-	url, err := parseUrl(args[1:])
+	url, err := parseUrl(args[1:], proxyUrl)
 	if err != nil {
 		log.Fatalf("parse url error %v", err)
 	}
@@ -40,7 +40,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("response err %v", err)
 	}
-	if res.StatusCode > 299 {
+	if res.StatusCode == 404 {
 		log.Fatalf("Response failed with status code: %d and body: %s\n", res.StatusCode)
 	}
 	if err != nil {
@@ -59,7 +59,7 @@ func main() {
 	}
 }
 
-func parseUrl(args []string) (string, error) {
+func parseUrl(args []string, proxyUrl string) (string, error) {
 	url := strings.Builder{}
 
 	url.WriteString(proxyUrl)
