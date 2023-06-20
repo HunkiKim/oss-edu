@@ -25,6 +25,8 @@ type Metadata struct {
 	Namespace string `json:"namespace"`
 }
 
+const proxyUrl = "http://127.0.0.1:8001/"
+
 func main() {
 	args := os.Args
 
@@ -60,7 +62,7 @@ func main() {
 func parseUrl(args []string) (string, error) {
 	url := strings.Builder{}
 
-	url.WriteString("http://127.0.0.1:8001/")
+	url.WriteString(proxyUrl)
 
 	switch args[1] {
 	case "v1":
