@@ -31,7 +31,7 @@ const proxyUrl = "http://127.0.0.1:8001/"
 func main() {
 	args := os.Args
 
-	url, err := parseUrl(args)
+	url, err := parseUrl(args[1:])
 	if err != nil {
 		log.Fatalf("parse url error %v", err)
 	}
@@ -64,7 +64,7 @@ func parseUrl(args []string) (string, error) {
 
 	url.WriteString(proxyUrl)
 
-	switch args[1] {
+	switch args[0] {
 	case "v1":
 		url.WriteString("api/")
 	default:
@@ -72,10 +72,10 @@ func parseUrl(args []string) (string, error) {
 	}
 
 	switch len(args) {
+	case 2:
+		url.WriteString(args[0] + "/" + args[1])
 	case 3:
-		url.WriteString(args[1] + "/" + args[2])
-	case 4:
-		url.WriteString(args[1] + "/namespaces/" + args[3] + "/" + args[2])
+		url.WriteString(args[0] + "/namespaces/" + args[2] + "/" + args[1])
 	default:
 		return "", errors.New("wrong args")
 	}
