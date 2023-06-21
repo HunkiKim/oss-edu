@@ -40,11 +40,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("response err %v", err)
 	}
-	if res.StatusCode == 404 {
-		log.Fatalf("Response failed with status code: %d and body: %s\n", res.StatusCode)
-	}
-	if err != nil {
-		log.Fatalf("response read err %v", err)
+	if res.StatusCode == http.StatusNotFound {
+		log.Fatalf("resource is not found \n status code : %d, \n body : %s", res.StatusCode, res.Body)
 	}
 	defer res.Body.Close()
 
