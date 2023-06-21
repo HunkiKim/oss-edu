@@ -2,16 +2,17 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"io"
 	"net/http"
 	"os"
 	"strings"
 )
 
-type Resource struct {
+type Watch struct {
 	Type   string `json:"type"`
 	Object Object `json:"object"`
 }
@@ -26,37 +27,67 @@ type Metadata struct {
 	Namespace string `json:"namespace"`
 }
 
-func main() {
+type ErrorRes struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Reason  string `json:"reason"`
+	Code    int    `json:"code"`
+}
+
+func execute(ctx context.Context) error {
 	proxyUrl := "http://127.0.0.1:8001/"
 
 	args := os.Args
-
-	url, err := parseUrl(args[1:], proxyUrl)
-	if err != nil {
-		log.Fatalf("parse url error %v", err)
+	if !(len(args) == 3 || len(args) == 4) {
+		return fmt.Errorf("args always 2 or 3 len but %d len", len(args)-1)
 	}
 
-	res, err := http.Get(url)
+	url, err := createUrl(args[1:], proxyUrl, "watch=true")
 	if err != nil {
-		log.Fatalf("response err %v", err)
+		return fmt.Errorf("create url error %v", err)
 	}
-	if res.StatusCode == http.StatusNotFound {
-		log.Fatalf("resource is not found \n status code : %d, \n body : %s", res.StatusCode, res.Body)
+
+	client := http.Client{}
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("create request err %v", err)
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("response err %v", err)
 	}
 	defer res.Body.Close()
 
+	switch res.StatusCode {
+	case http.StatusOK:
+	case http.StatusNotFound:
+		errBody, err := unmarshalErr(res)
+		if err != nil {
+			return fmt.Errorf("resource is not found \ncode : %d \nbody : %s", res.StatusCode, err)
+		}
+		return fmt.Errorf("resource is not found \ncode : %d \nstatus : %s \nmessage : %s \nreason : %s \n", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
+	default:
+		errBody, err := unmarshalErr(res)
+		if err != nil {
+			return fmt.Errorf("wrong request \ncode : %d \nbody : %s", res.StatusCode, err)
+		}
+		return fmt.Errorf("wrong request \ncode : %d, \nstatus : %s \nmessage : %s \nreason : %s \n", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
+	}
+
+	var watch *Watch
 	scanner := bufio.NewScanner(res.Body)
 	for scanner.Scan() {
 		line := scanner.Text()
-		resource, err := unmarshal([]byte(line))
-		if err != nil {
-			log.Fatalf("unmarshal err %v", err)
+		if err := json.Unmarshal([]byte(line), &watch); err != nil {
+			return fmt.Errorf("unmarshal err %v", err)
 		}
-		fmt.Printf("%-10s %-40s %-40s %s\n", resource.Type, resource.Object.Metadata.Name, resource.Object.Metadata.Uid, resource.Object.Metadata.Namespace)
+		fmt.Printf("%-10s %-40s %-40s %s\n", watch.Type, watch.Object.Metadata.Name, watch.Object.Metadata.Uid, watch.Object.Metadata.Namespace)
 	}
+	return nil
 }
 
-func parseUrl(args []string, proxyUrl string) (string, error) {
+func createUrl(args []string, proxyUrl string, options ...string) (string, error) {
 	url := strings.Builder{}
 
 	url.WriteString(proxyUrl)
@@ -70,21 +101,46 @@ func parseUrl(args []string, proxyUrl string) (string, error) {
 
 	switch len(args) {
 	case 2:
-		url.WriteString(args[0] + "/" + args[1])
+		url.WriteString(args[0])
+		url.WriteString("/")
+		url.WriteString(args[1])
 	case 3:
-		url.WriteString(args[0] + "/namespaces/" + args[2] + "/" + args[1])
+		url.WriteString(args[0])
+		url.WriteString("/namespaces/")
+		url.WriteString(args[2])
+		url.WriteString("/")
+		url.WriteString(args[1])
 	default:
 		return "", errors.New("wrong args")
 	}
-	url.WriteString("?watch=true")
+
+	if len(options) > 0 {
+		url.WriteString("?")
+		for _, option := range options {
+			url.WriteString(option)
+			url.WriteString("&")
+		}
+	}
 	return url.String(), nil
 }
 
-func unmarshal(body []byte) (*Resource, error) {
-	var resources *Resource
-
-	if err := json.Unmarshal(body, &resources); err != nil {
+func unmarshalErr(res *http.Response) (*ErrorRes, error) {
+	errBody := &ErrorRes{}
+	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
 		return nil, err
 	}
-	return resources, nil
+
+	if err = json.Unmarshal(resBody, &errBody); err != nil {
+		return nil, errors.New(string(resBody))
+	}
+	return errBody, nil
+}
+
+func main() {
+	ctx := context.Background()
+	if err := execute(ctx); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
