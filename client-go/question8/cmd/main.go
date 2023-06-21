@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-type Resource struct {
+type List struct {
 	Items []Item `json:"items"`
 }
 
@@ -67,9 +67,9 @@ func execute(ctx context.Context) error {
 	case http.StatusNotFound:
 		errBody, err := unmarshalErr(res)
 		if err != nil {
-			return fmt.Errorf("resource is not found \ncode : %d \nbody : %s", res.StatusCode, err)
+			return fmt.Errorf("list is not found \ncode : %d \nbody : %s", res.StatusCode, err)
 		}
-		return fmt.Errorf("resource is not found \ncode : %d \nstatus : %s \nmessage : %s \nreason : %s \n", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
+		return fmt.Errorf("list is not found \ncode : %d \nstatus : %s \nmessage : %s \nreason : %s \n", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
 	default:
 		errBody, err := unmarshalErr(res)
 		if err != nil {
@@ -78,12 +78,12 @@ func execute(ctx context.Context) error {
 		return fmt.Errorf("wrong request \ncode : %d, \nstatus : %s \nmessage : %s \nreason : %s \n", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
 	}
 
-	var resources *Resource
-	if err := json.Unmarshal([]byte(body), &resources); err != nil {
+	var list *List
+	if err := json.Unmarshal([]byte(body), &list); err != nil {
 		return fmt.Errorf("unmarshal err %v", err)
 	}
 
-	metadatas := parseMetadatas(resources)
+	metadatas := parseMetadatas(list)
 
 	printMetadatas(metadatas)
 
@@ -132,10 +132,10 @@ func unmarshalErr(res *http.Response) (*ErrorRes, error) {
 	return errBody, nil
 }
 
-func parseMetadatas(resources *Resource) []Metadata {
-	metadatas := make([]Metadata, 0, len(resources.Items))
+func parseMetadatas(list *List) []Metadata {
+	metadatas := make([]Metadata, 0, len(list.Items))
 
-	for _, item := range resources.Items {
+	for _, item := range list.Items {
 		metadatas = append(metadatas, item.Metadata)
 	}
 	return metadatas
