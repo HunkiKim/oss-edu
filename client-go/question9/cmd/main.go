@@ -34,28 +34,23 @@ type ErrorRes struct {
 	Code    int    `json:"code"`
 }
 
-func execute(ctx context.Context) error {
+func execute(ctx context.Context, args []string) error {
 	proxyUrl := "http://127.0.0.1:8001/"
 
-	args := os.Args
-	if !(len(args) == 3 || len(args) == 4) {
-		return fmt.Errorf("args always 2 or 3 len but %d len", len(args)-1)
-	}
-
-	url, err := createUrl(args[1:], proxyUrl, "watch=true")
+	url, err := createUrl(args, proxyUrl, "watch=true")
 	if err != nil {
-		return fmt.Errorf("create url error %v", err)
+		return fmt.Errorf("create url error: %v", err)
 	}
 
 	client := http.Client{}
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return fmt.Errorf("create request err %v", err)
+		return fmt.Errorf("create request: err %v", err)
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("response err %v", err)
+		return fmt.Errorf("response err: %v", err)
 	}
 	defer res.Body.Close()
 
@@ -64,15 +59,15 @@ func execute(ctx context.Context) error {
 	case http.StatusNotFound:
 		errBody, err := unmarshalErr(res)
 		if err != nil {
-			return fmt.Errorf("watch is not found \ncode : %d \nbody : %s", res.StatusCode, err)
+			return fmt.Errorf("watch is not found code: %d, body: %s", res.StatusCode, err)
 		}
-		return fmt.Errorf("watch is not found \ncode : %d \nstatus : %s \nmessage : %s \nreason : %s \n", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
+		return fmt.Errorf("watch is not found code: %d, status: %s, message: %s, reason: %s", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
 	default:
 		errBody, err := unmarshalErr(res)
 		if err != nil {
-			return fmt.Errorf("wrong request \ncode : %d \nbody : %s", res.StatusCode, err)
+			return fmt.Errorf("wrong request code: %d, body: %s", res.StatusCode, err)
 		}
-		return fmt.Errorf("wrong request \ncode : %d, \nstatus : %s \nmessage : %s \nreason : %s \n", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
+		return fmt.Errorf("wrong request code: %d, status: %s, message: %s, reason: %s", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
 	}
 
 	var watch *Watch
@@ -80,7 +75,7 @@ func execute(ctx context.Context) error {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if err := json.Unmarshal([]byte(line), &watch); err != nil {
-			return fmt.Errorf("unmarshal err %v", err)
+			return fmt.Errorf("unmarshal: err %v", err)
 		}
 		fmt.Printf("%-10s %-40s %-40s %s\n", watch.Type, watch.Object.Metadata.Name, watch.Object.Metadata.Uid, watch.Object.Metadata.Namespace)
 	}
@@ -88,7 +83,7 @@ func execute(ctx context.Context) error {
 }
 
 func createUrl(args []string, proxyUrl string, options ...string) (string, error) {
-	url := strings.Builder{}
+	url := &strings.Builder{}
 
 	url.WriteString(proxyUrl)
 
@@ -101,15 +96,9 @@ func createUrl(args []string, proxyUrl string, options ...string) (string, error
 
 	switch len(args) {
 	case 2:
-		url.WriteString(args[0])
-		url.WriteString("/")
-		url.WriteString(args[1])
+		writeString(url, args[0], "/", args[1])
 	case 3:
-		url.WriteString(args[0])
-		url.WriteString("/namespaces/")
-		url.WriteString(args[2])
-		url.WriteString("/")
-		url.WriteString(args[1])
+		writeString(url, args[0], "/namespaces", args[2], "/", args[1])
 	default:
 		return "", errors.New("wrong args")
 	}
@@ -122,6 +111,12 @@ func createUrl(args []string, proxyUrl string, options ...string) (string, error
 		}
 	}
 	return url.String(), nil
+}
+
+func writeString(builder *strings.Builder, strs ...string) {
+	for _, str := range strs {
+		builder.WriteString(str)
+	}
 }
 
 func unmarshalErr(res *http.Response) (*ErrorRes, error) {
@@ -138,8 +133,14 @@ func unmarshalErr(res *http.Response) (*ErrorRes, error) {
 }
 
 func main() {
+	args := os.Args
+	if l := len(args); !(l == 3 || l == 4) {
+		fmt.Printf("args always 2 or 3 len but %d len", l-1)
+		os.Exit(1)
+	}
+
 	ctx := context.Background()
-	if err := execute(ctx); err != nil {
+	if err := execute(ctx, args[1:]); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
