@@ -64,9 +64,9 @@ func execute(ctx context.Context) error {
 	case http.StatusNotFound:
 		errBody, err := unmarshalErr(res)
 		if err != nil {
-			return fmt.Errorf("resource is not found \ncode : %d \nbody : %s", res.StatusCode, err)
+			return fmt.Errorf("watch is not found \ncode : %d \nbody : %s", res.StatusCode, err)
 		}
-		return fmt.Errorf("resource is not found \ncode : %d \nstatus : %s \nmessage : %s \nreason : %s \n", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
+		return fmt.Errorf("watch is not found \ncode : %d \nstatus : %s \nmessage : %s \nreason : %s \n", errBody.Code, errBody.Status, errBody.Message, errBody.Reason)
 	default:
 		errBody, err := unmarshalErr(res)
 		if err != nil {
