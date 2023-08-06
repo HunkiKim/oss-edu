@@ -3,7 +3,7 @@ package command
 import (
 	"errors"
 	"fmt"
-	"racing-car/racingcar/pkg/interfaces"
+	"racing-car/pkg/interfaces"
 )
 
 type Reader struct{}

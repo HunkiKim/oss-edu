@@ -3,8 +3,9 @@ package json
 import (
 	"encoding/json"
 	"fmt"
-	"racing-car/racingcar/pkg/interfaces"
-	"racing-car/racingcar/pkg/user"
+
+	"racing-car/pkg/interfaces"
+	"racing-car/pkg/user"
 )
 
 type Writer struct{}

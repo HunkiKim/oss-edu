@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"racing-car/racingcar/pkg/user"
+	"racing-car/pkg/user"
 )
 
 type Reader interface {

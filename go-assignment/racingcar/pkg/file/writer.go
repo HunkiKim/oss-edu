@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"racing-car/racingcar/pkg/interfaces"
 	"strings"
 
-	"racing-car/racingcar/pkg/user"
+	"racing-car/pkg/interfaces"
+	"racing-car/pkg/user"
 )
 
 type writer struct {

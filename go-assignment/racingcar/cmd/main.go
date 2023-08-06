@@ -7,11 +7,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"racing-car/racingcar/pkg/command"
-	"racing-car/racingcar/pkg/file"
-	"racing-car/racingcar/pkg/interfaces"
-	"racing-car/racingcar/pkg/json"
-	"racing-car/racingcar/pkg/user"
+	"racing-car/pkg/command"
+	"racing-car/pkg/file"
+	"racing-car/pkg/interfaces"
+	"racing-car/pkg/json"
+	"racing-car/pkg/user"
 )
 
 type racingFlags struct {

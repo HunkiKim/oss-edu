@@ -2,8 +2,8 @@ package command
 
 import (
 	"fmt"
-	"racing-car/racingcar/pkg/interfaces"
-	"racing-car/racingcar/pkg/user"
+	"racing-car/pkg/interfaces"
+	"racing-car/pkg/user"
 	"strings"
 )
 

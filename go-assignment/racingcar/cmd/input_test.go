@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/google/go-cmp/cmp"
-	"racing-car/racingcar/pkg/user"
+	"racing-car/pkg/user"
 	"testing"
 )
 

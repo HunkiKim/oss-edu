@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"racing-car/racingcar/pkg/interfaces"
+
+	"racing-car/pkg/interfaces"
 )
 
 type Reader struct {

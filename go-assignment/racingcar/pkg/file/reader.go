@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"racing-car/racingcar/pkg/interfaces"
+	"racing-car/pkg/interfaces"
 	"strconv"
 	"strings"
 )
