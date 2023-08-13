@@ -30,7 +30,7 @@ func (h *RacingHandler) AddToRouter(path string, router *gin.Engine) {
 	group := router.Group(path)
 
 	group.GET("/:racingID", h.get)
-	group.POST("/", h.creat)
+	group.POST("/", h.create)
 	group.PUT("/:racingID", h.update)
 	group.DELETE("/:racingID", h.delete)
 }
@@ -63,7 +63,7 @@ func (h *RacingHandler) get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"racing": string(r), "users": string(u)})
 }
 
-func (h *RacingHandler) creat(c *gin.Context) {
+func (h *RacingHandler) create(c *gin.Context) {
 	readCloser := c.Request.Body
 	body, err := io.ReadAll(readCloser)
 	if err != nil {
