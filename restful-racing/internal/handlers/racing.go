@@ -2,19 +2,24 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
-	"racing-restful/internal/models"
+	models "racing-restful/internal/models"
 	"strconv"
 )
 
 type RacingHandler struct {
 }
 
-type createRequest struct {
-	racing models.Racing `json:"racing"`
-	users  []string      `json:"users"`
+type CreateRequest struct {
+	Racing models.Racing `json:"racing"`
+	Users  []string      `json:"users"`
+}
+
+type UpdateRequest struct {
+	MaxTurns int `json:"max_turns"`
 }
 
 func NewRacingHandler() *RacingHandler {
@@ -22,21 +27,15 @@ func NewRacingHandler() *RacingHandler {
 }
 
 func (h *RacingHandler) AddToRouter(path string, router *gin.Engine) {
-	//CRUD 추가하고싶음
-	// C -> name,turns로 user, racing 둘 다 생성
-	// R -> racing 정보 조회 -> 유저들 정보 조회
-	// U -> racing 정보 수정 (최대 도는 횟수 user들 validation)
-	// D -> racing 삭제 시 cascade 로 다같이 삭제 (user도)
 	group := router.Group(path)
 
-	group.GET("/:racingID", h.getRacing)
-	group.POST("/", h.creatRacing)
-	group.PATCH("/")
-	group.DELETE("/")
+	group.GET("/:racingID", h.get)
+	group.POST("/", h.creat)
+	group.PUT("/:racingID", h.update)
+	group.DELETE("/:racingID", h.delete)
 }
 
-// GetRacing: Racing 조회
-func (h *RacingHandler) getRacing(c *gin.Context) {
+func (h *RacingHandler) get(c *gin.Context) {
 	racingId, err := strconv.ParseInt(c.Param("racingID"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
@@ -44,31 +43,95 @@ func (h *RacingHandler) getRacing(c *gin.Context) {
 
 	racing, ok := models.Racings[racingId]
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"message": strconv.FormatInt(racingId, 10) + "is not found"})
+		c.JSON(http.StatusNotFound, gin.H{"message": strconv.FormatInt(racingId, 10) + " is not found"})
+	}
+
+	var users []models.User
+	for _, user := range models.Users {
+		if user.RacingId == racingId {
+			users = append(users, *user)
+		}
 	}
 
 	r, err := json.Marshal(racing)
+	u, err := json.Marshal(users)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, "racing can't marshal")
 	}
 
-	c.JSON(http.StatusOK, gin.H{"racing": string(r)})
+	c.JSON(http.StatusOK, gin.H{"racing": string(r), "users": string(u)})
 }
 
-func (h *RacingHandler) creatRacing(c *gin.Context) {
+func (h *RacingHandler) creat(c *gin.Context) {
 	readCloser := c.Request.Body
 	body, err := io.ReadAll(readCloser)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 	}
 
-	var r map[string]interface{}
-
+	var r CreateRequest
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
 	}
 
-	models.AddRacing(r)
-	c.JSON(http.StatusCreated, gin.H{"racing": r, "id": len(models.Racings)})
+	racing := r.Racing
+	racingId := models.AddRacing(&racing)
+
+	var userIds []int64
+
+	for _, name := range r.Users {
+		userId := models.AddUser(models.NewUser(name, racing.MaxTurns, racingId))
+		userIds = append(userIds, userId)
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"racingId": racingId, "userIds": userIds})
+}
+
+func (h *RacingHandler) update(c *gin.Context) {
+	racingId, err := strconv.ParseInt(c.Param("racingId"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
+	}
+
+	readCloser := c.Request.Body
+	body, err := io.ReadAll(readCloser)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+	}
+
+	var r UpdateRequest
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
+	}
+
+	var userIds []int64
+	for id, user := range models.Users {
+		if user.RacingId == racingId {
+			models.UpdateTurns(id, r.MaxTurns)
+			userIds = append(userIds, id)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"UserIds": userIds})
+}
+
+func (h *RacingHandler) delete(c *gin.Context) {
+	racingId, err := strconv.ParseInt(c.Param("racingID"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
+	}
+
+	delete(models.Racings, racingId)
+
+	for idx, user := range models.Users {
+		if user.RacingId == racingId {
+			delete(models.Users, idx)
+		}
+	}
+
+	fmt.Print(models.Racings)
+	c.JSON(http.StatusOK, gin.H{"message": "delete complete"})
 }
