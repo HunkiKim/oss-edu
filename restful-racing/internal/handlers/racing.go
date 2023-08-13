@@ -38,12 +38,14 @@ func (h *RacingHandler) AddToRouter(path string, router *gin.Engine) {
 func (h *RacingHandler) get(c *gin.Context) {
 	racingId, err := strconv.ParseInt(c.Param("racingID"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Errorf("parse error: %v", err)})
+		return
 	}
 
 	racing, ok := models.Racings[racingId]
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"message": strconv.FormatInt(racingId, 10) + " is not found"})
+		c.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("%d is not found", racingId)})
+		return
 	}
 
 	var users []models.User
@@ -54,10 +56,15 @@ func (h *RacingHandler) get(c *gin.Context) {
 	}
 
 	r, err := json.Marshal(racing)
-	u, err := json.Marshal(users)
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, "racing can't marshal")
+		return
+	}
+
+	u, err := json.Marshal(users)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, "users can't marshal")
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"racing": string(r), "users": string(u)})
@@ -67,20 +74,21 @@ func (h *RacingHandler) create(c *gin.Context) {
 	readCloser := c.Request.Body
 	body, err := io.ReadAll(readCloser)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Errorf("read error: %v", err)})
+		return
 	}
 
 	var r CreateRequest
 	err = json.Unmarshal(body, &r)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Errorf("parse error: %v", err)})
+		return
 	}
 
 	racing := r.Racing
 	racingId := models.AddRacing(&racing)
 
 	var userIds []int64
-
 	for _, name := range r.Users {
 		userId := models.AddUser(models.NewUser(name, racing.MaxTurns, racingId))
 		userIds = append(userIds, userId)
@@ -90,21 +98,23 @@ func (h *RacingHandler) create(c *gin.Context) {
 }
 
 func (h *RacingHandler) update(c *gin.Context) {
-	racingId, err := strconv.ParseInt(c.Param("racingId"), 10, 64)
+	racingId, err := strconv.ParseInt(c.Param("racingID"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Errorf("parse error: %v", err)})
+		return
 	}
 
-	readCloser := c.Request.Body
-	body, err := io.ReadAll(readCloser)
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Errorf("read error: %v", err)})
+		return
 	}
 
 	var r UpdateRequest
 	err = json.Unmarshal(body, &r)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Errorf("parse error: %v", err)})
+		return
 	}
 
 	var userIds []int64
@@ -121,17 +131,16 @@ func (h *RacingHandler) update(c *gin.Context) {
 func (h *RacingHandler) delete(c *gin.Context) {
 	racingId, err := strconv.ParseInt(c.Param("racingID"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "parse error : " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Errorf("parse error: %v", err)})
+		return
 	}
 
 	delete(models.Racings, racingId)
-
 	for idx, user := range models.Users {
 		if user.RacingId == racingId {
 			delete(models.Users, idx)
 		}
 	}
 
-	fmt.Print(models.Racings)
 	c.JSON(http.StatusOK, gin.H{"message": "delete complete"})
 }
